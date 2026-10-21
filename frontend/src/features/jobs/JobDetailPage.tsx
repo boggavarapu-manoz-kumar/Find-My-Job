@@ -16,7 +16,6 @@ import {
   RefreshCw,
   Check,
   Bookmark,
-  Send,
 } from 'lucide-react';
 import { PageContainer } from '../../components/ui/PageContainer';
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button';
@@ -26,7 +25,6 @@ import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton';
 import { Toast } from '../../components/ui/Toast';
 import { jobService } from '../../api/jobService';
 import candidateService from '../../api/candidateService';
-import { ApplyModal } from '../candidate/components/ApplyModal';
 import { isValidHttpUrl } from '../../utils/url';
 import type { Job } from '../../types/job.types';
 import { useAuth } from '../../hooks/useAuth';
@@ -48,7 +46,6 @@ export const JobDetailPage: React.FC = () => {
   // Candidate Actions state
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
 
   // Fetch job record by slug
   const fetchJobData = useCallback(async (signal?: AbortSignal) => {
@@ -210,15 +207,6 @@ export const JobDetailPage: React.FC = () => {
     }
   };
 
-  const handleApplyClick = () => {
-    if (!job) return;
-    if (!isAuthenticated) {
-      navigate('/candidate/login', { state: { from: location } });
-      return;
-    }
-    setIsApplyModalOpen(true);
-  };
-
   // 1. Loading State
   if (isLoading) {
     return (
@@ -353,15 +341,6 @@ export const JobDetailPage: React.FC = () => {
             >
               Apply Now
             </PrimaryButton>
-
-            <SecondaryButton
-              size="lg"
-              icon={<Send className="w-4 h-4" />}
-              onClick={handleApplyClick}
-              aria-label="Easy Apply in-platform"
-            >
-              Easy Apply
-            </SecondaryButton>
           </div>
 
           <div className="flex items-center gap-2">
@@ -456,18 +435,6 @@ export const JobDetailPage: React.FC = () => {
             ))}
           </div>
         </div>
-      )}
-
-      {/* Application Modal */}
-      {isApplyModalOpen && (
-        <ApplyModal
-          job={job}
-          isOpen={isApplyModalOpen}
-          onClose={() => setIsApplyModalOpen(false)}
-          onSuccess={() => {
-            setToastMessage('Application submitted successfully!');
-          }}
-        />
       )}
 
       {/* Toast Notification */}
