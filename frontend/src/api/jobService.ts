@@ -33,6 +33,12 @@ export const jobService = {
 
       if (response.data && response.data.success && Array.isArray(response.data.data)) {
         memoryCache.set(cacheKey, { timestamp: Date.now(), data: response.data.data });
+        // Pre-warm individual slug cache so clicking any job opens at 0ms even without router state
+        response.data.data.forEach((j) => {
+          if (j?.slug) {
+            memoryCache.set(`job_slug_${j.slug}`, { timestamp: Date.now(), data: j });
+          }
+        });
         return response.data.data;
       }
       throw new Error('Invalid response structure received for featured positions.');
@@ -123,6 +129,12 @@ export const jobService = {
           hasPrevious: raw.hasPrevious ?? false,
         };
         memoryCache.set(cacheKey, { timestamp: Date.now(), data: normalized });
+        // Pre-warm individual slug cache so clicking any job opens at 0ms instantly
+        normalized.content.forEach((j) => {
+          if (j?.slug) {
+            memoryCache.set(`job_slug_${j.slug}`, { timestamp: Date.now(), data: j });
+          }
+        });
         return normalized;
       }
       throw new Error('Invalid response structure received for job opportunities.');
