@@ -85,6 +85,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional(readOnly = true)
+    @org.springframework.cache.annotation.Cacheable(value = "featuredJobs")
     public List<JobResponseDTO> getFeaturedJobs() {
         return jobRepository.findTop6ByStatusAndFeaturedTrueOrderByPublishedAtDesc(JobStatus.PUBLISHED)
             .stream()
@@ -94,6 +95,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional(readOnly = true)
+    @org.springframework.cache.annotation.Cacheable(value = "relatedJobs", key = "#slug")
     public List<JobResponseDTO> getRelatedJobs(String slug) {
         Job job = jobRepository.findBySlugAndStatus(slug, JobStatus.PUBLISHED)
             .orElseThrow(() -> new ResourceNotFoundException("Job opportunity not found"));
@@ -107,6 +109,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"featuredJobs", "relatedJobs"}, allEntries = true)
     public JobResponseDTO createJob(JobCreateRequestDTO request) {
         // Generate collision-resistant permanent slug
         String slug = SlugUtils.generateJobSlug(request.getTitle(), request.getCompany());
@@ -158,6 +161,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"featuredJobs", "relatedJobs"}, allEntries = true)
     public JobResponseDTO updateJob(Long id, JobUpdateRequestDTO request) {
         Job job = jobRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Job with ID " + id + " not found"));
