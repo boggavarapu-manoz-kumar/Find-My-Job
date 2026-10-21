@@ -247,7 +247,7 @@ export const CategoriesPage: React.FC = () => {
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 items-stretch"
         >
           {filtered.map((cat) => {
             const count = counts[cat.key];
@@ -258,44 +258,46 @@ export const CategoriesPage: React.FC = () => {
                 key={cat.key}
                 variants={staggerItem}
                 onClick={() => handleCategoryClick(cat.key)}
-                whileHover={{ y: -2 }}
+                whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={!hasJobs && !isLoading}
-                className={`group text-left p-5 rounded-card border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 ${
+                className={`group flex flex-col justify-between w-full h-full text-left p-5 sm:p-6 rounded-xl border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 ${
                   hasJobs || isLoading
-                    ? 'bg-canvas-card border-canvas-border hover:border-brand-400/60 hover:shadow-card-hover cursor-pointer'
+                    ? 'bg-canvas-card border-canvas-border hover:border-brand-500 hover:shadow-lg cursor-pointer'
                     : 'bg-canvas-subtle border-canvas-border opacity-60 cursor-not-allowed'
                 }`}
               >
-                {/* Icon */}
-                <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-colors duration-200 ${
-                    hasJobs
-                      ? 'bg-brand-50 text-brand-600 group-hover:bg-brand-100'
-                      : 'bg-canvas-subtle text-ink-400'
-                  }`}
-                >
-                  {cat.icon}
+                <div>
+                  {/* Icon */}
+                  <div
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-colors duration-200 ${
+                      hasJobs
+                        ? 'bg-brand-50 text-brand-600 group-hover:bg-brand-600 group-hover:text-white'
+                        : 'bg-canvas-subtle text-ink-400'
+                    }`}
+                  >
+                    {cat.icon}
+                  </div>
+
+                  {/* Name */}
+                  <h2
+                    className={`text-base font-semibold mb-1.5 transition-colors duration-150 ${
+                      hasJobs
+                        ? 'text-ink-900 group-hover:text-brand-600'
+                        : 'text-ink-500'
+                    }`}
+                  >
+                    {cat.name}
+                  </h2>
+
+                  {/* Description */}
+                  <p className="text-xs sm:text-sm text-ink-500 leading-relaxed mb-4">
+                    {cat.description}
+                  </p>
                 </div>
 
-                {/* Name */}
-                <h2
-                  className={`text-sm font-semibold mb-1 transition-colors duration-150 ${
-                    hasJobs
-                      ? 'text-ink-900 group-hover:text-brand-600'
-                      : 'text-ink-500'
-                  }`}
-                >
-                  {cat.name}
-                </h2>
-
-                {/* Description */}
-                <p className="text-xs text-ink-500 leading-relaxed mb-3">
-                  {cat.description}
-                </p>
-
                 {/* Count / loading */}
-                <div className="flex items-center justify-between">
+                <div className="pt-3 border-t border-canvas-border/50 flex items-center justify-between mt-auto">
                   {isLoading ? (
                     <span className="h-4 w-16 rounded bg-canvas-subtle shimmer block" />
                   ) : hasJobs ? (
@@ -307,7 +309,7 @@ export const CategoriesPage: React.FC = () => {
                   )}
 
                   {hasJobs && (
-                    <ArrowRight className="w-3.5 h-3.5 text-brand-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150" />
+                    <ArrowRight className="w-4 h-4 text-brand-600 group-hover:translate-x-1 transition-transform" />
                   )}
                 </div>
               </motion.button>

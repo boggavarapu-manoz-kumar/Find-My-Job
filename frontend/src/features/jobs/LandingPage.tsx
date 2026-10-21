@@ -152,19 +152,25 @@ const CategoryCard: React.FC<{
   return (
     <motion.button
       onClick={() => navigate(`/jobs?category=${encodeURIComponent(catKey)}`)}
-      whileHover={{ y: -2 }}
+      whileHover={{ y: -3 }}
       whileTap={{ scale: 0.98 }}
-      className="group text-left p-4 bg-canvas-card border border-canvas-border rounded-card hover:border-brand-400/60 hover:shadow-card-hover transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
+      className="group flex flex-col justify-between w-full h-full text-left p-5 sm:p-6 bg-canvas-card border border-canvas-border rounded-xl hover:border-brand-500 hover:shadow-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
     >
-      <span className="block text-sm font-semibold text-ink-900 group-hover:text-brand-600 transition-colors mb-1.5">
-        {name}
-      </span>
-      <span className="block text-xs text-ink-500 leading-relaxed line-clamp-2">
-        {description}
-      </span>
-      <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity">
-        View roles <ChevronRight className="w-3 h-3" />
-      </span>
+      <div>
+        <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3 group-hover:bg-brand-600 group-hover:text-white transition-colors duration-200">
+          <Briefcase className="w-5 h-5" />
+        </div>
+        <h3 className="text-base font-semibold text-ink-900 group-hover:text-brand-600 transition-colors mb-2">
+          {name}
+        </h3>
+        <p className="text-xs sm:text-sm text-ink-500 leading-relaxed line-clamp-2">
+          {description}
+        </p>
+      </div>
+      <div className="mt-4 pt-3 border-t border-canvas-border/50 flex items-center justify-between text-xs font-semibold text-brand-600">
+        <span>Explore jobs</span>
+        <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+      </div>
     </motion.button>
   );
 };
@@ -423,10 +429,10 @@ export const LandingPage: React.FC = () => {
 
           <motion.div
             {...staggerProps}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
           >
             {categories.slice(0, 6).map((cat) => (
-              <motion.div key={cat.key} variants={staggerItem}>
+              <motion.div key={cat.key} variants={staggerItem} className="flex">
                 <CategoryCard {...cat} />
               </motion.div>
             ))}
