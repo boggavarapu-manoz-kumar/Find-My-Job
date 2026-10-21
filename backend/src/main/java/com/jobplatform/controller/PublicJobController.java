@@ -128,6 +128,17 @@ public class PublicJobController {
     }
 
     /**
+     * Public related opportunities in same category.
+     */
+    @GetMapping("/{slug}/related")
+    public ResponseEntity<ApiResponse<List<JobResponseDTO>>> getRelatedJobs(@PathVariable String slug) {
+        List<JobResponseDTO> related = jobService.getRelatedJobs(slug);
+        return ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "public, max-age=60, stale-while-revalidate=300")
+            .body(ApiResponse.success("Related positions retrieved successfully", related));
+    }
+
+    /**
      * Public category counts for categories page (aggregates counts in 1 fast query instead of 10 requests).
      */
     @GetMapping("/categories")

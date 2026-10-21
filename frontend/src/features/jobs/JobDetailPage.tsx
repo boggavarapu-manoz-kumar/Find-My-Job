@@ -60,9 +60,10 @@ export const JobDetailPage: React.FC = () => {
       setJob(jobData);
 
       if (jobData) {
-        // Fetch real related jobs within same category
-        const related = await jobService.getRelatedJobs(slug, 3, signal);
-        setRelatedJobs(related);
+        // Fire related jobs concurrently in background without blocking main job content
+        jobService.getRelatedJobs(slug, 3, signal)
+          .then((related) => setRelatedJobs(related))
+          .catch(() => {});
 
         // Check if saved by candidate
         if (isAuthenticated && user?.role === 'ROLE_CANDIDATE') {
