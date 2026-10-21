@@ -100,7 +100,9 @@ public class PublicJobController {
             pageable
         );
 
-        return ResponseEntity.ok(ApiResponse.success("Jobs retrieved successfully", response));
+        return ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "public, max-age=30, stale-while-revalidate=120")
+            .body(ApiResponse.success("Jobs retrieved successfully", response));
     }
 
     /**
@@ -109,7 +111,9 @@ public class PublicJobController {
     @GetMapping("/{slug}")
     public ResponseEntity<ApiResponse<JobResponseDTO>> getJobBySlug(@PathVariable String slug) {
         JobResponseDTO job = jobService.getPublicJobBySlug(slug);
-        return ResponseEntity.ok(ApiResponse.success("Job details retrieved successfully", job));
+        return ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "public, max-age=60, stale-while-revalidate=300")
+            .body(ApiResponse.success("Job details retrieved successfully", job));
     }
 
     /**
@@ -118,7 +122,9 @@ public class PublicJobController {
     @GetMapping("/featured")
     public ResponseEntity<ApiResponse<List<JobResponseDTO>>> getFeaturedJobs() {
         List<JobResponseDTO> featured = jobService.getFeaturedJobs();
-        return ResponseEntity.ok(ApiResponse.success("Featured positions retrieved successfully", featured));
+        return ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "public, max-age=60, stale-while-revalidate=300")
+            .body(ApiResponse.success("Featured positions retrieved successfully", featured));
     }
 
     /**
@@ -127,6 +133,8 @@ public class PublicJobController {
     @GetMapping("/{slug}/related")
     public ResponseEntity<ApiResponse<List<JobResponseDTO>>> getRelatedJobs(@PathVariable String slug) {
         List<JobResponseDTO> related = jobService.getRelatedJobs(slug);
-        return ResponseEntity.ok(ApiResponse.success("Related positions retrieved successfully", related));
+        return ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "public, max-age=60, stale-while-revalidate=300")
+            .body(ApiResponse.success("Related positions retrieved successfully", related));
     }
 }

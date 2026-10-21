@@ -10,18 +10,29 @@ export interface JobCategorySummary {
   description: string;
 }
 
+// High-performance client-side in-memory cache
+const memoryCache = new Map<string, { timestamp: number; data: unknown }>();
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
 export const jobService = {
   /**
    * Fetch featured positions for landing page showcase directly from Spring Boot REST API.
    * Endpoint: GET /api/v1/public/jobs/featured
    */
   async getFeaturedJobs(signal?: AbortSignal): Promise<Job[]> {
+    const cacheKey = 'featured_jobs';
+    const cached = memoryCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data as Job[];
+    }
+
     try {
       const response = await apiClient.get<ApiResponse<Job[]>>('/public/jobs/featured', {
         signal,
       });
 
       if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        memoryCache.set(cacheKey, { timestamp: Date.now(), data: response.data.data });
         return response.data.data;
       }
       throw new Error('Invalid response structure received for featured positions.');
@@ -101,6 +112,12 @@ export const jobService = {
    * Returns null if the slug is unknown, unpublished, or archived (404).
    */
   async getJobBySlug(slug: string, signal?: AbortSignal): Promise<Job | null> {
+    const cacheKey = `job_slug_${slug}`;
+    const cached = memoryCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data as Job;
+    }
+
     try {
       const response = await apiClient.get<ApiResponse<Job>>(`/public/jobs/${encodeURIComponent(slug)}`, {
         signal,
@@ -109,6 +126,7 @@ export const jobService = {
       if (response.data && response.data.success && response.data.data) {
         // Enforce public access status constraint
         if (response.data.data.status === 'PUBLISHED') {
+          memoryCache.set(cacheKey, { timestamp: Date.now(), data: response.data.data });
           return response.data.data;
         }
         return null;
