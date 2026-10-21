@@ -6,6 +6,9 @@ import { JobListingsPage } from '../features/jobs/JobListingsPage';
 import { JobDetailPage } from '../features/jobs/JobDetailPage';
 import { LoginPage } from '../features/admin/LoginPage';
 import { AdminDashboardPage } from '../features/admin/AdminDashboardPage';
+import { CandidateLoginPage } from '../features/candidate/CandidateLoginPage';
+import { CandidateRegisterPage } from '../features/candidate/CandidateRegisterPage';
+import { CandidateDashboardPage } from '../features/candidate/CandidateDashboardPage';
 import { ProtectedRoute } from '../components/layout/ProtectedRoute';
 
 export const AppRoutes: React.FC = () => {
@@ -16,6 +19,24 @@ export const AppRoutes: React.FC = () => {
         <Route path="/" element={<LandingPage />} />
         <Route path="/jobs" element={<JobListingsPage />} />
         <Route path="/jobs/:slug" element={<JobDetailPage />} />
+
+        {/* Candidate Auth */}
+        <Route path="/candidate/login" element={<CandidateLoginPage />} />
+        <Route path="/candidate/register" element={<CandidateRegisterPage />} />
+
+        {/* Protected Candidate Portal */}
+        <Route
+          path="/candidate"
+          element={<Navigate to="/candidate/dashboard" replace />}
+        />
+        <Route
+          path="/candidate/dashboard"
+          element={
+            <ProtectedRoute allowedRole="ROLE_CANDIDATE">
+              <CandidateDashboardPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Admin Login */}
         <Route path="/admin/login" element={<LoginPage />} />
@@ -28,7 +49,7 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="/admin/jobs"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRole="ROLE_ADMIN">
               <AdminDashboardPage />
             </ProtectedRoute>
           }

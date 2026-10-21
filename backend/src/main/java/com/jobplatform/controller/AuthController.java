@@ -1,13 +1,12 @@
 package com.jobplatform.controller;
 
-import com.jobplatform.dto.ApiResponse;
-import com.jobplatform.dto.AuthResponseDTO;
-import com.jobplatform.dto.LoginRequestDTO;
-import com.jobplatform.dto.UserResponseDTO;
+import com.jobplatform.dto.*;
 import com.jobplatform.entity.User;
+import com.jobplatform.exception.ApiException;
 import com.jobplatform.repository.UserRepository;
 import com.jobplatform.security.JwtTokenProvider;
 import jakarta.validation.Valid;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +17,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,25 +27,84 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public AuthController(
             AuthenticationManager authenticationManager,
             JwtTokenProvider tokenProvider,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
         this.tokenProvider = tokenProvider;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
-     * Authenticate administrator credentials and return signed JWT.
+     * Candidate registration endpoint.
+     * Enforces unique username and email, hashes password, and hardcodes role to ROLE_CANDIDATE.
+     */
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<AuthResponseDTO>> register(@Valid @RequestBody CandidateRegisterRequestDTO request) {
+        String normalizedUsername = request.getUsername().trim();
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+
+        if (userRepository.existsByUsername(normalizedUsername)) {
+            throw new ApiException("Username is already taken", HttpStatus.CONFLICT);
+        }
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new ApiException("Email address is already registered", HttpStatus.CONFLICT);
+        }
+
+        try {
+            User candidate = new User(
+                    normalizedUsername,
+                    normalizedEmail,
+                    passwordEncoder.encode(request.getPassword()),
+                    "ROLE_CANDIDATE"
+            );
+
+            User savedUser = userRepository.save(candidate);
+
+            // Generate token directly for the newly registered candidate
+            String token = tokenProvider.generateTokenFromUsernameAndRoles(
+                    savedUser.getUsername(),
+                    savedUser.getRole()
+            );
+
+            UserResponseDTO userDTO = new UserResponseDTO(
+                    savedUser.getId(),
+                    savedUser.getUsername(),
+                    savedUser.getEmail(),
+                    savedUser.getRole(),
+                    savedUser.isEnabled(),
+                    savedUser.getCreatedAt()
+            );
+
+            AuthResponseDTO authResponse = new AuthResponseDTO(
+                    token,
+                    tokenProvider.getExpirationMs() / 1000,
+                    userDTO
+            );
+
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("Candidate registered successfully", authResponse));
+
+        } catch (DataIntegrityViolationException ex) {
+            throw new ApiException("Username or email is already registered", HttpStatus.CONFLICT);
+        }
+    }
+
+    /**
+     * Authenticate credentials (Admin or Candidate) and return signed JWT with roles.
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponseDTO>> login(@Valid @RequestBody LoginRequestDTO request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getUsernameOrEmail(),
+                            request.getUsernameOrEmail().trim(),
                             request.getPassword()
                     )
             );

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { User, LoginRequest } from '../types/auth.types';
+import type { CandidateRegisterRequest } from '../types/candidate.types';
 import authService from '../api/authService';
+import candidateService from '../api/candidateService';
 import { AuthContext, type AuthContextType } from './authContextDef';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -60,6 +62,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const registerCandidate = useCallback(async (data: CandidateRegisterRequest) => {
+    setIsLoading(true);
+    try {
+      const authData = await candidateService.register(data);
+      localStorage.setItem('token', authData.accessToken);
+      setToken(authData.accessToken);
+      setUser(authData.user);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await authService.logout();
@@ -76,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: !!token && !!user,
     isLoading,
     login,
+    registerCandidate,
     logout,
   };
 

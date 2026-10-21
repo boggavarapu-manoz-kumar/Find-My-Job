@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Menu, X } from 'lucide-react';
+import { Search, Menu, X, Bookmark, User as UserIcon, LogOut, Shield } from 'lucide-react';
 import { PageContainer } from '../ui/PageContainer';
-import { PrimaryButton } from '../ui/Button';
+import { PrimaryButton, SecondaryButton } from '../ui/Button';
+import { useAuth } from '../../hooks/useAuth';
 
 export interface SiteHeaderProps {
   siteName?: string;
@@ -16,6 +17,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const navLinks = [
     { label: 'Jobs', href: '/jobs' },
@@ -34,14 +36,12 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
               alt={siteName}
               className="h-12 sm:h-14 md:h-16 w-auto max-w-[240px] sm:max-w-[280px] md:max-w-[320px] object-contain transition-transform group-hover:scale-[1.02]"
               onError={(e) => {
-                // Fallback to stylized logo icon + text if needed
                 const target = e.currentTarget;
                 target.style.display = 'none';
                 const fallback = target.nextElementSibling as HTMLElement;
                 if (fallback) fallback.style.display = 'flex';
               }}
             />
-            {/* Fallback container if image fails to render */}
             <div className="hidden items-center gap-3">
               <img
                 src="/logo-icon.png"
@@ -60,15 +60,15 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            <div className="flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-6">
+            <div className="flex items-center gap-1">
               {navLinks.map((link) => {
                 const isActive = location.pathname === link.href;
                 return (
                   <Link
                     key={link.label}
                     to={link.href}
-                    className={`text-sm font-semibold px-4 py-2.5 rounded-button transition-all duration-150 ${
+                    className={`text-sm font-semibold px-3.5 py-2 rounded-button transition-all duration-150 ${
                       isActive
                         ? 'text-brand-600 bg-brand-50 shadow-xs'
                         : 'text-ink-700 hover:text-ink-950 hover:bg-canvas-subtle'
@@ -82,10 +82,44 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
 
             <div className="flex items-center gap-3">
               <Link to="/jobs">
-                <PrimaryButton size="md" className="font-semibold px-5 shadow-sm hover:shadow" icon={<Search className="w-4 h-4" />}>
+                <PrimaryButton size="md" className="font-semibold px-4 shadow-sm" icon={<Search className="w-4 h-4" />}>
                   Find Jobs
                 </PrimaryButton>
               </Link>
+
+              {/* Dynamic Auth Controls */}
+              {isAuthenticated ? (
+                <div className="flex items-center gap-2 pl-2 border-l border-canvas-border">
+                  {user?.role === 'ROLE_CANDIDATE' ? (
+                    <Link to="/candidate/dashboard">
+                      <SecondaryButton size="sm" icon={<Bookmark className="w-3.5 h-3.5" />}>
+                        My Portal
+                      </SecondaryButton>
+                    </Link>
+                  ) : (
+                    <Link to="/admin/jobs">
+                      <SecondaryButton size="sm" icon={<Shield className="w-3.5 h-3.5" />}>
+                        Admin
+                      </SecondaryButton>
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => logout()}
+                    className="p-2 text-ink-400 hover:text-rose-600 hover:bg-rose-50 rounded-button transition-colors"
+                    title="Log Out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 pl-2 border-l border-canvas-border">
+                  <Link to="/candidate/login">
+                    <SecondaryButton size="sm" icon={<UserIcon className="w-3.5 h-3.5" />}>
+                      Sign In
+                    </SecondaryButton>
+                  </Link>
+                </div>
+              )}
             </div>
           </nav>
 
@@ -123,12 +157,43 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
                   {link.label}
                 </Link>
               ))}
-              <div className="pt-2">
+
+              <div className="pt-2 flex flex-col gap-2">
                 <Link to="/jobs" onClick={() => setMobileMenuOpen(false)}>
                   <PrimaryButton size="md" className="w-full" icon={<Search className="w-4 h-4" />}>
                     Find Jobs
                   </PrimaryButton>
                 </Link>
+
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      to={user?.role === 'ROLE_ADMIN' ? '/admin/jobs' : '/candidate/dashboard'}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <SecondaryButton size="md" className="w-full">
+                        {user?.role === 'ROLE_ADMIN' ? 'Admin Dashboard' : 'Candidate Portal'}
+                      </SecondaryButton>
+                    </Link>
+                    <SecondaryButton
+                      size="md"
+                      className="w-full text-rose-600"
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                      icon={<LogOut className="w-4 h-4" />}
+                    >
+                      Sign Out
+                    </SecondaryButton>
+                  </>
+                ) : (
+                  <Link to="/candidate/login" onClick={() => setMobileMenuOpen(false)}>
+                    <SecondaryButton size="md" className="w-full" icon={<UserIcon className="w-4 h-4" />}>
+                      Candidate Sign In
+                    </SecondaryButton>
+                  </Link>
+                )}
               </div>
             </div>
           </motion.div>

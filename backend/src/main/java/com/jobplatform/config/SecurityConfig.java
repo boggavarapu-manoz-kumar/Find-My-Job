@@ -45,6 +45,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Explicitly protect all administrative endpoints
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                // Explicitly protect candidate endpoints
+                .requestMatchers("/api/v1/candidate/**").hasRole("CANDIDATE")
                 // Permitted public read endpoints, auth endpoints, and health probes
                 .requestMatchers(
                     "/api/v1/auth/**",

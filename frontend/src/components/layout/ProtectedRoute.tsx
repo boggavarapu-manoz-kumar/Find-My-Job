@@ -4,10 +4,14 @@ import { useAuth } from '../../hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  allowedRole?: 'ROLE_ADMIN' | 'ROLE_CANDIDATE';
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  allowedRole = 'ROLE_ADMIN',
+}) => {
+  const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -22,8 +26,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    // Save intended destination for post-login redirect
-    return <Navigate to="/admin/login" state={{ from: location }} replace />;
+    const loginTarget = allowedRole === 'ROLE_ADMIN' ? '/admin/login' : '/candidate/login';
+    return <Navigate to={loginTarget} state={{ from: location }} replace />;
+  }
+
+  if (allowedRole && user?.role !== allowedRole) {
+    // If candidate visits admin route, redirect to candidate dashboard; if admin visits candidate route, redirect to admin
+    const fallbackTarget = user?.role === 'ROLE_ADMIN' ? '/admin/jobs' : '/candidate/dashboard';
+    return <Navigate to={fallbackTarget} replace />;
   }
 
   return <>{children}</>;

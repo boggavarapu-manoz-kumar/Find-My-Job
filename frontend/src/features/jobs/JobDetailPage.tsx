@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import {
   ArrowLeft,
@@ -15,6 +15,8 @@ import {
   Building,
   RefreshCw,
   Check,
+  Bookmark,
+  Send,
 } from 'lucide-react';
 import { PageContainer } from '../../components/ui/PageContainer';
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button';
@@ -23,12 +25,17 @@ import { JobCard } from '../../components/ui/JobCard';
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton';
 import { Toast } from '../../components/ui/Toast';
 import { jobService } from '../../api/jobService';
+import candidateService from '../../api/candidateService';
+import { ApplyModal } from '../candidate/components/ApplyModal';
 import { isValidHttpUrl } from '../../utils/url';
 import type { Job } from '../../types/job.types';
+import { useAuth } from '../../hooks/useAuth';
 
 export const JobDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
 
   const [job, setJob] = useState<Job | null>(null);
   const [relatedJobs, setRelatedJobs] = useState<Job[]>([]);
@@ -37,6 +44,11 @@ export const JobDetailPage: React.FC = () => {
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Candidate Actions state
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
 
   // Fetch job record by slug
   const fetchJobData = useCallback(async (signal?: AbortSignal) => {
@@ -52,6 +64,16 @@ export const JobDetailPage: React.FC = () => {
         // Fetch real related jobs within same category
         const related = await jobService.getRelatedJobs(slug, 3, signal);
         setRelatedJobs(related);
+
+        // Check if saved by candidate
+        if (isAuthenticated && user?.role === 'ROLE_CANDIDATE') {
+          try {
+            const saved = await candidateService.checkSaved(jobData.id);
+            setIsSaved(saved);
+          } catch {
+            // Non-critical, ignore
+          }
+        }
 
         // Dynamic Document Title and SEO Metadata
         document.title = `${jobData.title} at ${jobData.company} | Find My Job`;
@@ -92,10 +114,9 @@ export const JobDetailPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [slug]);
+  }, [slug, isAuthenticated, user]);
 
   useEffect(() => {
-    // Prevent stale job from previously viewed slug from appearing while loading
     setJob(null);
     setRelatedJobs([]);
     const controller = new AbortController();
@@ -131,7 +152,6 @@ export const JobDetailPage: React.FC = () => {
     return `Up to ${currency}${Math.round(j.salaryMax! / 1000)}k${period}`;
   };
 
-  // Copy canonical URL action
   const handleCopyLink = async () => {
     const url = window.location.href;
     try {
@@ -144,7 +164,6 @@ export const JobDetailPage: React.FC = () => {
     }
   };
 
-  // Native share with clipboard fallback
   const handleShare = async () => {
     if (!job) return;
     const shareData = {
@@ -166,13 +185,38 @@ export const JobDetailPage: React.FC = () => {
     }
   };
 
+  const handleSaveToggle = async () => {
+    if (!job) return;
+    if (!isAuthenticated) {
+      navigate('/candidate/login', { state: { from: location } });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (isSaved) {
+        await candidateService.unsaveJob(job.id);
+        setIsSaved(false);
+        setToastMessage('Job removed from saved bookmarks');
+      } else {
+        await candidateService.saveJob(job.id);
+        setIsSaved(true);
+        setToastMessage('Job saved to your candidate profile');
+      }
+    } catch (err: unknown) {
+      setToastMessage(err instanceof Error ? err.message : 'Could not update saved status');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleApplyClick = () => {
     if (!job) return;
-    if (isValidHttpUrl(job.applicationUrl)) {
-      window.open(job.applicationUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      setToastMessage('Application destination link is invalid or uses an unsupported protocol.');
+    if (!isAuthenticated) {
+      navigate('/candidate/login', { state: { from: location } });
+      return;
     }
+    setIsApplyModalOpen(true);
   };
 
   // 1. Loading State
@@ -223,7 +267,6 @@ export const JobDetailPage: React.FC = () => {
     );
   }
 
-  // Skills parsing
   const skillList = job.skills
     ? job.skills.split(',').map((s) => s.trim()).filter(Boolean)
     : [];
@@ -294,16 +337,48 @@ export const JobDetailPage: React.FC = () => {
 
         {/* Primary Action Controls */}
         <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-canvas-border">
-          <PrimaryButton
-            size="lg"
-            icon={<ExternalLink className="w-4 h-4" />}
-            onClick={handleApplyClick}
-            aria-label="Apply Now to external employer portal"
-          >
-            Apply Now
-          </PrimaryButton>
+          <div className="flex items-center gap-3">
+            <PrimaryButton
+              size="lg"
+              icon={<ExternalLink className="w-4 h-4" />}
+              onClick={() => {
+                if (!job) return;
+                if (isValidHttpUrl(job.applicationUrl)) {
+                  window.open(job.applicationUrl, '_blank', 'noopener,noreferrer');
+                } else {
+                  setToastMessage('Application link is invalid or uses an unsupported protocol.');
+                }
+              }}
+              aria-label="Apply Now to external employer portal"
+            >
+              Apply Now
+            </PrimaryButton>
+
+            <SecondaryButton
+              size="lg"
+              icon={<Send className="w-4 h-4" />}
+              onClick={handleApplyClick}
+              aria-label="Easy Apply in-platform"
+            >
+              Easy Apply
+            </SecondaryButton>
+          </div>
 
           <div className="flex items-center gap-2">
+            <SecondaryButton
+              size="md"
+              icon={
+                <Bookmark
+                  className={`w-4 h-4 ${isSaved ? 'fill-brand-600 text-brand-600' : ''}`}
+                />
+              }
+              onClick={handleSaveToggle}
+              disabled={isSaving}
+              aria-label={isSaved ? 'Unsave Job' : 'Save Job'}
+            >
+              {isSaved ? 'Saved' : 'Save Job'}
+            </SecondaryButton>
+
             <SecondaryButton
               size="md"
               icon={copiedLink ? <Check className="w-4 h-4 text-emerald-text" /> : <Copy className="w-4 h-4" />}
@@ -358,7 +433,7 @@ export const JobDetailPage: React.FC = () => {
         ) : null}
       </div>
 
-      {/* 4. Real Related Opportunities (Displayed only when genuine matching records exist) */}
+      {/* Real Related Opportunities */}
       {relatedJobs.length > 0 && (
         <div className="space-y-4 pt-4 border-t border-canvas-border">
           <div className="flex items-center justify-between">
@@ -381,6 +456,18 @@ export const JobDetailPage: React.FC = () => {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Application Modal */}
+      {isApplyModalOpen && (
+        <ApplyModal
+          job={job}
+          isOpen={isApplyModalOpen}
+          onClose={() => setIsApplyModalOpen(false)}
+          onSuccess={() => {
+            setToastMessage('Application submitted successfully!');
+          }}
+        />
       )}
 
       {/* Toast Notification */}
