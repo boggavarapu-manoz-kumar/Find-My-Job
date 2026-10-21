@@ -9,7 +9,7 @@ This document lists all environment variables required for deploying the **Find 
 ### Service Details:
 - **Environment**: Java / Docker or Native Maven
 - **Root Directory**: `backend`
-- **Build Command**: `./mvnw clean package -DskipTests -Pprod`
+- **Build Command**: `./mvnw clean package -DskipTests`
 - **Start Command**: `java -jar target/backend-1.0.0.jar`
 
 ### Environment Variables:
