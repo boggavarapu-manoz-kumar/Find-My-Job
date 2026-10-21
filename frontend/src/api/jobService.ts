@@ -156,7 +156,7 @@ export const jobService = {
    * Endpoint: GET /api/v1/public/jobs/{slug}
    * Returns null if the slug is unknown, unpublished, or archived (404).
    */
-  async getJobBySlug(slug: string, signal?: AbortSignal): Promise<Job | null> {
+  async getJobBySlug(slug: string, signal?: AbortSignal, retryCount: number = 0): Promise<Job | null> {
     const cacheKey = `job_slug_${slug}`;
     const cached = memoryCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
@@ -166,6 +166,7 @@ export const jobService = {
     try {
       const response = await apiClient.get<ApiResponse<Job>>(`/public/jobs/${encodeURIComponent(slug)}`, {
         signal,
+        timeout: 15000,
       });
 
       if (response.data && response.data.success && response.data.data) {
@@ -182,9 +183,17 @@ export const jobService = {
         throw error;
       }
       const axiosErr = error as AxiosError<ApiResponse<unknown>>;
+      // If genuine 404 from backend (job definitely not in database), return null
       if (axiosErr.response?.status === 404) {
         return null;
       }
+
+      // If backend was sleeping or network glitch (timeout, 502, 503, 504), retry once automatically
+      if (retryCount < 1 && (!axiosErr.response || axiosErr.response.status >= 500 || axiosErr.code === 'ECONNABORTED')) {
+        await new Promise((res) => setTimeout(res, 1200));
+        return this.getJobBySlug(slug, signal, retryCount + 1);
+      }
+
       const message =
         axiosErr.response?.data?.message ||
         axiosErr.message ||

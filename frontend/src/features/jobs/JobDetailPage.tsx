@@ -122,6 +122,7 @@ export const JobDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (!routerState?.initialJob) {
+      setIsLoading(true);
       setJob(null);
     }
     setRelatedJobs([]);
@@ -139,7 +140,7 @@ export const JobDetailPage: React.FC = () => {
     return () => {
       controller.abort();
     };
-  }, [fetchJobData, routerState]);
+  }, [slug]);
 
   // Format salary display cleanly without hardcoding 0
   const formatSalary = (j: Job) => {
