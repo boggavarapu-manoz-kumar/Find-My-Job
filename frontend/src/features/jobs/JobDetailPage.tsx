@@ -121,7 +121,9 @@ export const JobDetailPage: React.FC = () => {
   }, [slug, isAuthenticated, user]);
 
   useEffect(() => {
-    setJob(null);
+    if (!routerState?.initialJob) {
+      setJob(null);
+    }
     setRelatedJobs([]);
     const controller = new AbortController();
     fetchJobData(controller.signal);
@@ -137,7 +139,7 @@ export const JobDetailPage: React.FC = () => {
     return () => {
       controller.abort();
     };
-  }, [fetchJobData]);
+  }, [fetchJobData, routerState]);
 
   // Format salary display cleanly without hardcoding 0
   const formatSalary = (j: Job) => {
