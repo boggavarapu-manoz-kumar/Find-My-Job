@@ -85,8 +85,14 @@ public class SecurityConfig {
                 .toList();
 
         config.setAllowedOrigins(origins);
+        config.setAllowedOriginPatterns(List.of(
+            "https://*.vercel.app",
+            "https://findmyjob.site",
+            "https://www.findmyjob.site",
+            "http://localhost:*"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+        config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization", "Link", "X-Total-Count"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L); // 1 hour pre-flight cache
