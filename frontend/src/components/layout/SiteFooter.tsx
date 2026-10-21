@@ -27,7 +27,8 @@ export const SiteFooter: React.FC = () => {
             <h4 className="font-semibold text-ink-900 uppercase tracking-wider text-[11px]">Explore</h4>
             <ul className="space-y-1.5 text-ink-500">
               <li><a href="/jobs" className="hover:text-brand-600 transition-colors">All Opportunities</a></li>
-              <li><a href="/jobs?fresher=true" className="hover:text-brand-600 transition-colors">Fresher Roles</a></li>
+              <li><a href="/categories" className="hover:text-brand-600 transition-colors">Job Categories</a></li>
+              <li><a href="/about" className="hover:text-brand-600 transition-colors">About Find My Job</a></li>
               <li><a href="/jobs?workMode=REMOTE" className="hover:text-brand-600 transition-colors">Remote Positions</a></li>
               <li><a href="/jobs?type=INTERNSHIP" className="hover:text-brand-600 transition-colors">Internships</a></li>
             </ul>
@@ -36,7 +37,8 @@ export const SiteFooter: React.FC = () => {
           <div className="space-y-2">
             <h4 className="font-semibold text-ink-900 uppercase tracking-wider text-[11px]">Platform</h4>
             <ul className="space-y-1.5 text-ink-500">
-              <li><span className="text-ink-400">Contact: support@findmyjob.com (Placeholder)</span></li>
+              <li><a href="/about" className="hover:text-brand-600 transition-colors">About Us</a></li>
+              <li><span className="text-ink-400">Contact: support@findmyjob.com</span></li>
               <li><span className="text-ink-400">Terms of Service (Draft)</span></li>
               <li><span className="text-ink-400">Privacy Policy (Draft)</span></li>
               <li><a href="/admin/login" className="hover:text-brand-600 transition-colors">Admin Dashboard</a></li>

@@ -1,0 +1,17 @@
+﻿User-agent: *
+Allow: /
+Allow: /jobs
+Allow: /jobs/*
+Allow: /categories
+Allow: /categories/*
+Allow: /about
+Allow: /assets/
+
+# Disallow private user and administrative management paths
+Disallow: /admin/
+Disallow: /candidate/
+Disallow: /api/
+
+# Host & Sitemap specification
+Host: https://findmyjob.site
+Sitemap: https://findmyjob.site/sitemap.xml

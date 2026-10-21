@@ -28,6 +28,8 @@ import candidateService from '../../api/candidateService';
 import { isValidHttpUrl } from '../../utils/url';
 import type { Job } from '../../types/job.types';
 import { useAuth } from '../../hooks/useAuth';
+import { SEOHead } from '../../components/seo/SEOHead';
+import { JobPostingSchema } from '../../components/seo/JobPostingSchema';
 
 export const JobDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -237,6 +239,11 @@ export const JobDetailPage: React.FC = () => {
   if (!job) {
     return (
       <PageContainer size="narrow" className="py-16 text-center space-y-5">
+        <SEOHead
+          title="Opportunity Closed or Not Found"
+          description="This job opportunity is closed, archived, or no longer accepting applications on Find My Job."
+          noindex={true}
+        />
         <div className="w-12 h-12 rounded-full bg-canvas-subtle text-ink-400 mx-auto flex items-center justify-center">
           <Building className="w-6 h-6" />
         </div>
@@ -260,7 +267,16 @@ export const JobDetailPage: React.FC = () => {
     : [];
 
   return (
-    <PageContainer size="narrow" className="space-y-8 pb-20">
+    <PageContainer size="narrow" className="py-8 space-y-8 pb-20">
+      {/* ── SEO Metadata & Structured Data ── */}
+      <SEOHead
+        title={`${job.title} at ${job.company}`}
+        description={`Apply for ${job.title} at ${job.company} in ${job.location}. ${job.description.slice(0, 150)}...`}
+        canonicalPath={`/jobs/${job.slug}`}
+        ogType="article"
+      />
+      <JobPostingSchema job={job} />
+
       {/* Back Navigation Bar */}
       <div className="flex items-center justify-between">
         <Link

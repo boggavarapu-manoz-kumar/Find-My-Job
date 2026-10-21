@@ -32,16 +32,15 @@ describe('LandingPage UI Foundation', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/Find the right job opportunity with complete clarity/i)).toBeInTheDocument();
+    expect(screen.getByText(/Find the right job/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/Job title, skill, or company/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Location or Remote/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Search Jobs/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/City or remote/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Explore Jobs/i })).toBeInTheDocument();
 
-    // Await async resolution
     await screen.findAllByText(/Staff Software Engineer, Platform Infrastructure/i);
   });
 
-  it('renders quick filter chips for Freshers, Experienced, Remote and Internships', async () => {
+  it('renders work mode and category discovery options', async () => {
     vi.spyOn(jobService, 'getFeaturedJobs').mockResolvedValue(DEV_FEATURED_JOBS);
     vi.spyOn(jobService, 'getLatestJobs').mockResolvedValue({
       content: DEV_LATEST_JOBS,
@@ -61,10 +60,10 @@ describe('LandingPage UI Foundation', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/Freshers \/ Entry-Level/i)).toBeInTheDocument();
-    expect(screen.getByText(/Experienced \/ Senior/i)).toBeInTheDocument();
-    expect(screen.getByText(/Remote Opportunities/i)).toBeInTheDocument();
-    expect(screen.getByText(/Internships/i)).toBeInTheDocument();
+    expect(screen.getByText('Remote')).toBeInTheDocument();
+    expect(screen.getByText('Hybrid')).toBeInTheDocument();
+    expect(screen.getByText('On-site')).toBeInTheDocument();
+    expect(screen.getByText('Internships')).toBeInTheDocument();
 
     await screen.findAllByText(/Staff Software Engineer, Platform Infrastructure/i);
   });
@@ -155,16 +154,16 @@ describe('LandingPage UI Foundation', () => {
     });
   });
 
-  it('formats undisclosed salary as "Not disclosed" and never displays zero', () => {
+  it('formats undisclosed salary as  Not disclosed and never displays zero', () => {
     const jobWithHiddenSalary = DEV_FEATURED_JOBS.find((j) => j.hideSalary)!;
     render(<JobCard job={jobWithHiddenSalary} />);
 
     expect(screen.getByText(/Not disclosed/i)).toBeInTheDocument();
-    expect(screen.queryByText('$0')).not.toBeInTheDocument();
+    expect(screen.queryByText('')).not.toBeInTheDocument();
     expect(screen.queryByText('0')).not.toBeInTheDocument();
   });
 
-  it('renders categories and integrity sections', async () => {
+  it('renders categories and how-it-works sections', async () => {
     vi.spyOn(jobService, 'getFeaturedJobs').mockResolvedValue(DEV_FEATURED_JOBS);
     vi.spyOn(jobService, 'getLatestJobs').mockResolvedValue({
       content: DEV_LATEST_JOBS,
@@ -185,8 +184,8 @@ describe('LandingPage UI Foundation', () => {
     );
 
     expect(screen.getByText(/Explore by Discipline/i)).toBeInTheDocument();
-    expect(screen.getByText(/A cleaner, more transparent hiring destination/i)).toBeInTheDocument();
-    expect(screen.getByText(/100% Public Access/i)).toBeInTheDocument();
+    expect(screen.getByText(/How Find My Job works/i)).toBeInTheDocument();
+    expect(screen.getByText(/Search & filter/i)).toBeInTheDocument();
 
     await screen.findAllByText(/Staff Software Engineer, Platform Infrastructure/i);
   });

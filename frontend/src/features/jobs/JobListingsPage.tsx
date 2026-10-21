@@ -23,6 +23,7 @@ import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SecondaryButton } from '../../components/ui/Button';
 import { jobService } from '../../api/jobService';
+import { SEOHead } from '../../components/seo/SEOHead';
 import type { Job, PaginatedResponse } from '../../types/job.types';
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
@@ -271,7 +272,14 @@ export const JobListingsPage: React.FC = () => {
   };
 
   return (
-    <PageContainer size="wide" className="space-y-6 pb-20">
+    <PageContainer size="wide" className="py-8 space-y-6 pb-20">
+      {/* ── SEO Metadata ── */}
+      <SEOHead
+        title={categoryParam ? `${categoryParam} Jobs` : keywordParam ? `Search Jobs: ${keywordParam}` : 'Explore Jobs & Career Opportunities'}
+        description={categoryParam ? `Explore verified ${categoryParam} job openings with direct employer applications and transparent salaries.` : 'Browse verified technology, engineering, remote, fresher, and internship positions on Find My Job.'}
+        canonicalPath="/jobs"
+      />
+
       {/* ── 1. Page Header ─────────────────────────────────────────────── */}
       <div className="space-y-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">

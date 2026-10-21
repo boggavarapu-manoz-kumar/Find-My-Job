@@ -53,7 +53,9 @@ public class SecurityConfig {
                     "/api/v1/health/**",
                     "/actuator/health/**",
                     "/actuator/info/**",
-                    "/api/v1/public/**"
+                    "/api/v1/public/**",
+                    "/sitemap.xml",
+                    "/robots.txt"
                 ).permitAll()
                 // All other requests require authentication
                 .anyRequest().authenticated()

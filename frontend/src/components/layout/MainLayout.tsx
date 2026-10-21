@@ -6,7 +6,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
   return (
     <div className="min-h-screen flex flex-col bg-canvas text-ink-900 selection:bg-brand-100 selection:text-brand-900">
       <SiteHeader />
-      <main className="flex-1 py-10">
+      <main className="flex-1">
         {children}
       </main>
       <SiteFooter />

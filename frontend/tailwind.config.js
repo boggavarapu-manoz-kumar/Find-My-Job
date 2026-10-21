@@ -72,10 +72,12 @@ export default {
         ]
       },
       boxShadow: {
+        'xs': '0 1px 2px 0 rgba(17, 20, 26, 0.06)',
         'subtle': '0 1px 2px 0 rgba(17, 20, 26, 0.04)',
         'card': '0 1px 3px 0 rgba(17, 20, 26, 0.05), 0 1px 2px -1px rgba(17, 20, 26, 0.05)',
         'card-hover': '0 4px 12px 0 rgba(17, 20, 26, 0.08), 0 2px 4px -2px rgba(17, 20, 26, 0.04)',
-        'elevated': '0 10px 25px -5px rgba(17, 20, 26, 0.08), 0 8px 10px -6px rgba(17, 20, 26, 0.04)',
+        'elevated': '0 10px 40px -8px rgba(17, 20, 26, 0.14), 0 4px 12px -4px rgba(17, 20, 26, 0.06)',
+        'glow-brand': '0 0 0 3px rgba(79,70,229,0.15), 0 4px 16px rgba(79,70,229,0.12)',
       },
       borderRadius: {
         'card': '12px',

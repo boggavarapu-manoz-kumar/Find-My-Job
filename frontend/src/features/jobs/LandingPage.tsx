@@ -1,274 +1,393 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, useReducedMotion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import {
+  motion,
+  useReducedMotion,
+} from 'framer-motion';
 import {
   Search,
   MapPin,
-  Sparkles,
   ArrowRight,
-  ShieldCheck,
-  Globe,
-  Layers,
-  Award,
-  GraduationCap,
   Briefcase,
-  AlertCircle,
-  RefreshCw,
+  Globe,
+  Laptop,
+  Building2,
+  CheckCircle2,
+  SlidersHorizontal,
+  Bookmark,
+  FileText,
+  ChevronRight,
 } from 'lucide-react';
-import axios from 'axios';
 import { PageContainer } from '../../components/ui/PageContainer';
-import { SectionHeading } from '../../components/ui/SectionHeading';
-import { PrimaryButton, SecondaryButton } from '../../components/ui/Button';
 import { JobCard } from '../../components/ui/JobCard';
-import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton';
 import { jobService } from '../../api/jobService';
 import { CompanyLogoMarquee } from '../companies/components/CompanyLogoMarquee';
-import { staggerContainer, fadeInUp, staggerItem } from '../../utils/motion';
+import { SEOHead } from '../../components/seo/SEOHead';
+import { staggerContainer, staggerItem, fadeInUp, fadeInLeft, fadeInRight } from '../../utils/motion';
 import type { Job } from '../../types/job.types';
 
-export const LandingPage: React.FC = () => {
+// ─── Hero search form ─────────────────────────────────────────────────────────
+const HeroSearch: React.FC = () => {
   const navigate = useNavigate();
-  const shouldReduceMotion = useReducedMotion();
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
-  const [featuredJobs, setFeaturedJobs] = useState<Job[]>([]);
-  const [latestJobs, setLatestJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const categories = jobService.getCategories();
-
-  const loadLandingData = useCallback(async (signal?: AbortSignal) => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const [featured, latest] = await Promise.all([
-        jobService.getFeaturedJobs(signal),
-        jobService.getLatestJobs({ size: 6 }, signal),
-      ]);
-      setFeaturedJobs(featured);
-      setLatestJobs(latest.content);
-    } catch (err: unknown) {
-      if (axios.isCancel(err)) return;
-      setErrorMessage(
-        err instanceof Error
-          ? err.message
-          : 'Unable to load positions from the server. Please check your connection or retry.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    document.title = 'Find My Job - Verified Job Discovery Platform';
-    const controller = new AbortController();
-    loadLandingData(controller.signal);
-    return () => {
-      controller.abort();
-    };
-  }, [loadLandingData]);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
     if (keyword.trim()) params.set('keyword', keyword.trim());
     if (location.trim()) params.set('location', location.trim());
-    navigate(`/jobs?${params.toString()}`);
-  };
-
-  const handleChipClick = (filterParam: string, value: string) => {
-    navigate(`/jobs?${filterParam}=${encodeURIComponent(value)}`);
+    navigate(`/jobs${params.toString() ? `?${params.toString()}` : ''}`);
   };
 
   return (
-    <div className="space-y-20 sm:space-y-24">
-      {/* 1. HERO SECTION */}
-      <section className="relative pt-8 sm:pt-12 pb-16 border-b border-canvas-border overflow-hidden">
-        <PageContainer size="wide">
+    <form onSubmit={handleSubmit} className="w-full" aria-label="Job search form">
+      <div className="flex flex-col sm:flex-row gap-2 bg-canvas-card border border-canvas-border rounded-card p-2 shadow-card">
+        {/* Keyword */}
+        <div className="flex items-center gap-2.5 flex-1 min-w-0 px-3 py-2 rounded-button border border-transparent focus-within:border-brand-300 focus-within:bg-brand-50/30 transition-all">
+          <Search className="w-4 h-4 text-ink-400 shrink-0" aria-hidden="true" />
+          <input
+            type="text"
+            placeholder="Job title, skill, or company"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            className="flex-1 min-w-0 bg-transparent text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none"
+            aria-label="Job title, skill, or company"
+          />
+        </div>
+
+        {/* Divider */}
+        <div className="hidden sm:block w-px bg-canvas-border self-stretch my-1" />
+
+        {/* Location */}
+        <div className="flex items-center gap-2.5 flex-1 min-w-0 px-3 py-2 rounded-button border border-transparent focus-within:border-brand-300 focus-within:bg-brand-50/30 transition-all">
+          <MapPin className="w-4 h-4 text-ink-400 shrink-0" aria-hidden="true" />
+          <input
+            type="text"
+            placeholder="City or remote"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="flex-1 min-w-0 bg-transparent text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none"
+            aria-label="City or remote"
+          />
+        </div>
+
+        {/* CTA */}
+        <button
+          type="submit"
+          className="shrink-0 px-5 py-2.5 bg-ink-900 text-white text-sm font-semibold rounded-button hover:bg-ink-800 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
+        >
+          Explore Jobs
+        </button>
+      </div>
+
+      {/* Quick links */}
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink-400">
+        <span>Popular:</span>
+        {['Remote', 'Full-time', 'Engineering', 'Design'].map((tag) => (
+          <button
+            key={tag}
+            type="button"
+            onClick={() => {
+              if (tag === 'Remote') navigate('/jobs?workMode=REMOTE');
+              else if (tag === 'Full-time') navigate('/jobs?employmentType=FULL_TIME');
+              else navigate(`/jobs?category=${encodeURIComponent(tag)}`);
+            }}
+            className="text-ink-500 hover:text-brand-600 hover:underline transition-colors"
+          >
+            {tag}
+          </button>
+        ))}
+      </div>
+    </form>
+  );
+};
+
+// ─── Work mode pill ────────────────────────────────────────────────────────────
+const WorkModePill: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+}> = ({ icon, label, href }) => (
+  <Link
+    to={href}
+    className="inline-flex items-center gap-2 px-4 py-2 bg-canvas-card border border-canvas-border rounded-full text-sm text-ink-700 font-medium hover:border-brand-400 hover:text-brand-600 hover:bg-brand-50 transition-all duration-150 shadow-xs"
+  >
+    {icon}
+    {label}
+  </Link>
+);
+
+// ─── How it works step ────────────────────────────────────────────────────────
+const HowStep: React.FC<{
+  step: string;
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}> = ({ step, icon, title, body }) => (
+  <div className="flex gap-4">
+    <div className="shrink-0 flex flex-col items-center">
+      <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-100 text-brand-600 flex items-center justify-center">
+        {icon}
+      </div>
+      <div className="flex-1 mt-2 w-px bg-canvas-border" />
+    </div>
+    <div className="pb-8 min-w-0">
+      <span className="text-[11px] font-bold text-brand-500 uppercase tracking-widest block mb-1">
+        Step {step}
+      </span>
+      <h3 className="text-base font-semibold text-ink-900 mb-1.5">{title}</h3>
+      <p className="text-sm text-ink-500 leading-relaxed">{body}</p>
+    </div>
+  </div>
+);
+
+// ─── Category card ────────────────────────────────────────────────────────────
+const CategoryCard: React.FC<{
+  name: string;
+  key: string;
+  description: string;
+}> = ({ name, key: catKey, description }) => {
+  const navigate = useNavigate();
+  return (
+    <motion.button
+      onClick={() => navigate(`/jobs?category=${encodeURIComponent(catKey)}`)}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      className="group text-left p-4 bg-canvas-card border border-canvas-border rounded-card hover:border-brand-400/60 hover:shadow-card-hover transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
+    >
+      <span className="block text-sm font-semibold text-ink-900 group-hover:text-brand-600 transition-colors mb-1.5">
+        {name}
+      </span>
+      <span className="block text-xs text-ink-500 leading-relaxed line-clamp-2">
+        {description}
+      </span>
+      <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity">
+        View roles <ChevronRight className="w-3 h-3" />
+      </span>
+    </motion.button>
+  );
+};
+
+// ─── Skeleton card ────────────────────────────────────────────────────────────
+const SkeletonCard: React.FC = () => (
+  <div className="p-6 bg-canvas-card border border-canvas-border rounded-card space-y-3 animate-pulse">
+    <div className="flex gap-3">
+      <div className="h-4 w-20 bg-canvas-subtle rounded" />
+      <div className="h-4 w-12 bg-canvas-subtle rounded" />
+    </div>
+    <div className="h-5 w-3/4 bg-canvas-subtle rounded" />
+    <div className="flex gap-4">
+      <div className="h-3 w-24 bg-canvas-subtle rounded" />
+      <div className="h-3 w-20 bg-canvas-subtle rounded" />
+    </div>
+  </div>
+);
+
+// ─── Main component ───────────────────────────────────────────────────────────
+export const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
+  const shouldReduceMotion = useReducedMotion();
+
+  const [featuredJobs, setFeaturedJobs] = useState<Job[]>([]);
+  const [latestJobs, setLatestJobs] = useState<Job[]>([]);
+  const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
+  const [isLoadingLatest, setIsLoadingLatest] = useState(true);
+  const [featuredError, setFeaturedError] = useState(false);
+  const [latestError, setLatestError] = useState(false);
+
+  const categories = jobService.getCategories();
+
+  // Fetch featured jobs
+  useEffect(() => {
+    const controller = new AbortController();
+    setIsLoadingFeatured(true);
+    setFeaturedError(false);
+
+    jobService
+      .getFeaturedJobs(controller.signal)
+      .then((jobs) => setFeaturedJobs(jobs.slice(0, 4)))
+      .catch((err) => {
+        if (!err?.message?.includes('cancel')) {
+          setFeaturedError(true);
+        }
+      })
+      .finally(() => setIsLoadingFeatured(false));
+
+    return () => controller.abort();
+  }, []);
+
+  // Fetch latest jobs
+  useEffect(() => {
+    const controller = new AbortController();
+    setIsLoadingLatest(true);
+    setLatestError(false);
+
+    jobService
+      .getLatestJobs({ sort: 'publishedAt,desc', size: 6 }, controller.signal)
+      .then((page) => setLatestJobs(page.content))
+      .catch((err) => {
+        if (!err?.message?.includes('cancel')) {
+          setLatestError(true);
+        }
+      })
+      .finally(() => setIsLoadingLatest(false));
+
+    return () => controller.abort();
+  }, []);
+
+  const animProps = shouldReduceMotion
+    ? {}
+    : {
+        variants: fadeInUp,
+        initial: 'hidden' as const,
+        whileInView: 'visible' as const,
+        viewport: { once: true, margin: '-40px' },
+      };
+
+  const staggerProps = shouldReduceMotion
+    ? {}
+    : {
+        variants: staggerContainer,
+        initial: 'hidden' as const,
+        whileInView: 'visible' as const,
+        viewport: { once: true, margin: '-40px' },
+      };
+
+  return (
+    <div className="overflow-x-hidden">
+      {/* ── SEO Metadata ── */}
+      <SEOHead
+        title="Latest Jobs, Fresher Jobs & Internships"
+        description="Discover verified job opportunities, fresher roles, software developer positions, and internships across India with transparent salaries on Find My Job."
+        canonicalPath="/"
+      />
+
+      {/* ================================================================= */}
+      {/* HERO                                                                */}
+      {/* ================================================================= */}
+      <section className="relative py-16 sm:py-24 overflow-hidden">
+        {/* Subtle background accent */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          aria-hidden="true"
+        >
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-brand-50 opacity-50 blur-3xl" />
+        </div>
+
+        <PageContainer size="wide" className="relative">
           <motion.div
-            variants={shouldReduceMotion ? undefined : staggerContainer}
+            variants={staggerContainer}
             initial="hidden"
             animate="visible"
-            className="max-w-3xl mx-auto text-center space-y-6"
+            className="max-w-2xl"
           >
-            <motion.div
-              variants={shouldReduceMotion ? undefined : fadeInUp}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-badge text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200 shadow-xs"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-              Verified Direct Listings • No Candidate Sign-In Required
+            {/* Badge */}
+            <motion.div variants={fadeInUp} className="mb-4">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-brand-200 bg-brand-50 text-brand-700 text-xs font-semibold tracking-wide">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
+                Verified technology opportunities
+              </span>
             </motion.div>
 
+            {/* Headline */}
             <motion.h1
-              variants={shouldReduceMotion ? undefined : fadeInUp}
-              className="text-4xl sm:text-6xl font-bold tracking-tight text-ink-900 leading-[1.12]"
+              variants={fadeInUp}
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-ink-900 tracking-tight leading-[1.1] mb-5"
             >
-              Find the right job opportunity with complete clarity.
+              Find the right job,{' '}
+              <span className="text-gradient-brand">not just any job.</span>
             </motion.h1>
 
+            {/* Subtext */}
             <motion.p
-              variants={shouldReduceMotion ? undefined : fadeInUp}
-              className="text-base sm:text-lg text-ink-600 leading-relaxed max-w-2xl mx-auto"
+              variants={fadeInUp}
+              className="text-lg text-ink-500 leading-relaxed mb-8 max-w-xl"
             >
-              Discover curated technology positions across reputable teams, from campus fresher hiring to senior architecture. Browse openly and apply directly to employer portals.
+              Browse verified technology roles with transparent salary
+              information and direct employer links. No spam, no middlemen.
             </motion.p>
 
-            {/* Hero Search Box */}
-            <motion.form
-              variants={shouldReduceMotion ? undefined : fadeInUp}
-              onSubmit={handleSearchSubmit}
-              className="mt-8 p-3 sm:p-3.5 bg-canvas-card border border-canvas-border rounded-card shadow-card-hover text-left"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-                {/* Keyword Field */}
-                <div className="sm:col-span-6 relative flex items-center">
-                  <div className="absolute left-3.5 text-ink-400 pointer-events-none">
-                    <Search className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    placeholder="Job title, skill, or company..."
-                    aria-label="Job title, skill, or company"
-                    className="w-full h-12 pl-10 pr-3 rounded-button bg-canvas-subtle sm:bg-transparent border border-transparent sm:border-0 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-0"
-                  />
-                </div>
+            {/* Search form */}
+            <motion.div variants={fadeInUp} className="mb-8">
+              <HeroSearch />
+            </motion.div>
 
-                <div className="hidden sm:block sm:col-span-1 text-center">
-                  <div className="w-px h-7 bg-canvas-border mx-auto" />
-                </div>
-
-                {/* Location Field */}
-                <div className="sm:col-span-3 relative flex items-center">
-                  <div className="absolute left-3.5 text-ink-400 pointer-events-none">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Location or Remote"
-                    aria-label="Location or Remote"
-                    className="w-full h-12 pl-10 pr-3 rounded-button bg-canvas-subtle sm:bg-transparent border border-transparent sm:border-0 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-0"
-                  />
-                </div>
-
-                {/* Search Button */}
-                <div className="sm:col-span-2">
-                  <PrimaryButton
-                    type="submit"
-                    size="md"
-                    className="w-full h-12 text-sm font-semibold"
-                    aria-label="Search Jobs"
-                  >
-                    Find Jobs
-                  </PrimaryButton>
-                </div>
-              </div>
-            </motion.form>
-
-            {/* Quick Filter Chips */}
+            {/* Work mode pills */}
             <motion.div
-              variants={shouldReduceMotion ? undefined : fadeInUp}
-              className="flex flex-wrap items-center justify-center gap-2 pt-2 text-xs"
+              variants={staggerContainer}
+              className="flex flex-wrap gap-2"
             >
-              <span className="text-ink-400 font-medium mr-1">Popular Filters:</span>
-              <button
-                type="button"
-                onClick={() => handleChipClick('fresher', 'true')}
-                className="px-3 py-1.5 rounded-badge bg-canvas-card border border-canvas-border text-ink-700 hover:border-brand-300 hover:text-brand-700 transition-colors shadow-xs"
-              >
-                🎓 Freshers / Entry-Level
-              </button>
-              <button
-                type="button"
-                onClick={() => handleChipClick('experienceLevel', 'SENIOR')}
-                className="px-3 py-1.5 rounded-badge bg-canvas-card border border-canvas-border text-ink-700 hover:border-brand-300 hover:text-brand-700 transition-colors shadow-xs"
-              >
-                💼 Experienced / Senior
-              </button>
-              <button
-                type="button"
-                onClick={() => handleChipClick('workMode', 'REMOTE')}
-                className="px-3 py-1.5 rounded-badge bg-canvas-card border border-canvas-border text-ink-700 hover:border-brand-300 hover:text-brand-700 transition-colors shadow-xs"
-              >
-                🌐 Remote Opportunities
-              </button>
-              <button
-                type="button"
-                onClick={() => handleChipClick('employmentType', 'INTERNSHIP')}
-                className="px-3 py-1.5 rounded-badge bg-canvas-card border border-canvas-border text-ink-700 hover:border-brand-300 hover:text-brand-700 transition-colors shadow-xs"
-              >
-                🌱 Internships
-              </button>
+              {[
+                { icon: <Globe className="w-3.5 h-3.5" />, label: 'Remote', href: '/jobs?workMode=REMOTE' },
+                { icon: <Laptop className="w-3.5 h-3.5" />, label: 'Hybrid', href: '/jobs?workMode=HYBRID' },
+                { icon: <Building2 className="w-3.5 h-3.5" />, label: 'On-site', href: '/jobs?workMode=ONSITE' },
+                { icon: <Briefcase className="w-3.5 h-3.5" />, label: 'Internships', href: '/jobs?employmentType=INTERNSHIP' },
+              ].map((pill) => (
+                <motion.div key={pill.label} variants={staggerItem}>
+                  <WorkModePill {...pill} />
+                </motion.div>
+              ))}
             </motion.div>
           </motion.div>
         </PageContainer>
       </section>
 
-      {/* 2. FEATURED COMPANIES CONTINUOUS MARQUEE */}
+      {/* ================================================================= */}
+      {/* COMPANY LOGOS MARQUEE                                             */}
+      {/* ================================================================= */}
       <CompanyLogoMarquee />
 
-      {/* 3. FEATURED POSITIONS SECTION */}
-      <motion.section
-        variants={shouldReduceMotion ? undefined : fadeInUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-60px' }}
-      >
-        <PageContainer size="wide" className="space-y-6">
-          <SectionHeading
-            title="Featured Positions"
-            subtitle="Curated, verified technology roles with clear job responsibilities and requirements."
-            tag="Curated"
-            action={
-              <button
-                onClick={() => navigate('/jobs')}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors"
-              >
-                View all openings <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            }
-          />
-
-          {/* Featured Positions Result Area */}
-          {errorMessage ? (
-            <div className="p-8 bg-canvas-card border border-rose-200 rounded-card text-center space-y-4 max-w-md mx-auto">
-              <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 mx-auto flex items-center justify-center">
-                <AlertCircle className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-ink-900">Positions Currently Unavailable</h3>
-                <p className="text-xs text-ink-500 mt-1 leading-relaxed">{errorMessage}</p>
-              </div>
-              <SecondaryButton size="sm" onClick={() => loadLandingData()} icon={<RefreshCw className="w-3.5 h-3.5" />}>
-                Retry Loading
-              </SecondaryButton>
+      {/* ================================================================= */}
+      {/* FEATURED JOBS                                                       */}
+      {/* ================================================================= */}
+      <section className="py-14 border-t border-canvas-border bg-canvas-card">
+        <PageContainer size="wide">
+          <motion.div {...animProps} className="flex items-end justify-between mb-8 gap-4">
+            <div>
+              <span className="text-xs font-semibold tracking-widest uppercase text-brand-600 block mb-1">
+                Featured
+              </span>
+              <h2 className="text-2xl font-bold text-ink-900">
+                Highlighted positions
+              </h2>
             </div>
-          ) : isLoading ? (
-            <LoadingSkeleton count={4} />
-          ) : featuredJobs.length === 0 ? (
-            <div className="p-8 bg-canvas-card border border-canvas-border rounded-card text-center space-y-2">
-              <p className="text-sm font-medium text-ink-700">No featured positions currently open.</p>
+            <Link
+              to="/jobs?sort=publishedAt,desc"
+              className="shrink-0 text-sm text-brand-600 font-medium hover:underline inline-flex items-center gap-1"
+            >
+              All jobs <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </motion.div>
+
+          {isLoadingFeatured ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          ) : featuredError ? (
+            <div className="py-10 text-center text-sm text-ink-400">
+              Could not load featured listings.{' '}
               <button
-                type="button"
-                onClick={() => navigate('/jobs')}
-                className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+                onClick={() => window.location.reload()}
+                className="text-brand-600 hover:underline font-medium"
               >
-                Browse all job openings &rarr;
+                Retry
               </button>
+            </div>
+          ) : featuredJobs.length === 0 ? (
+            <div className="py-10 text-center text-sm text-ink-400">
+              No featured listings at this time.{' '}
+              <Link to="/jobs" className="text-brand-600 hover:underline font-medium">
+                Browse all jobs
+              </Link>
             </div>
           ) : (
             <motion.div
-              variants={shouldReduceMotion ? undefined : staggerContainer}
-              initial="hidden"
-              animate="visible"
+              {...staggerProps}
               className="grid grid-cols-1 md:grid-cols-2 gap-4"
             >
               {featuredJobs.map((job) => (
-                <motion.div key={`featured-${job.id}`} variants={shouldReduceMotion ? undefined : staggerItem}>
+                <motion.div key={job.id} variants={staggerItem}>
                   <JobCard
                     job={job}
                     onClick={() => navigate(`/jobs/${job.slug}`)}
@@ -278,45 +397,90 @@ export const LandingPage: React.FC = () => {
             </motion.div>
           )}
         </PageContainer>
-      </motion.section>
+      </section>
 
-      {/* 4. LATEST OPPORTUNITIES SECTION */}
-      <motion.section
-        variants={shouldReduceMotion ? undefined : fadeInUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-60px' }}
-      >
-        <PageContainer size="wide" className="space-y-6">
-          <SectionHeading
-            title="Latest Openings"
-            subtitle="Recently published listings ready for direct candidate exploration."
-            tag="Fresh"
-            action={
+      {/* ================================================================= */}
+      {/* CATEGORIES                                                          */}
+      {/* ================================================================= */}
+      <section className="py-14 border-t border-canvas-border">
+        <PageContainer size="wide">
+          <motion.div {...animProps} className="flex items-end justify-between mb-8 gap-4">
+            <div>
+              <span className="text-xs font-semibold tracking-widest uppercase text-brand-600 block mb-1">
+                Browse by discipline
+              </span>
+              <h2 className="text-2xl font-bold text-ink-900">
+                Job categories
+              </h2>
+            </div>
+            <Link
+              to="/categories"
+              className="shrink-0 text-sm text-brand-600 font-medium hover:underline inline-flex items-center gap-1"
+            >
+              View all <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </motion.div>
+
+          <motion.div
+            {...staggerProps}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+          >
+            {categories.slice(0, 6).map((cat) => (
+              <motion.div key={cat.key} variants={staggerItem}>
+                <CategoryCard {...cat} />
+              </motion.div>
+            ))}
+          </motion.div>
+        </PageContainer>
+      </section>
+
+      {/* ================================================================= */}
+      {/* LATEST JOBS                                                         */}
+      {/* ================================================================= */}
+      <section className="py-14 border-t border-canvas-border bg-canvas-card">
+        <PageContainer size="wide">
+          <motion.div {...animProps} className="flex items-end justify-between mb-8 gap-4">
+            <div>
+              <span className="text-xs font-semibold tracking-widest uppercase text-brand-600 block mb-1">
+                Recently published
+              </span>
+              <h2 className="text-2xl font-bold text-ink-900">
+                Latest opportunities
+              </h2>
+            </div>
+            <Link
+              to="/jobs"
+              className="shrink-0 text-sm text-brand-600 font-medium hover:underline inline-flex items-center gap-1"
+            >
+              Browse all <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </motion.div>
+
+          {isLoadingLatest ? (
+            <div className="space-y-3">
+              {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          ) : latestError ? (
+            <div className="py-10 text-center text-sm text-ink-400">
+              Could not load recent listings.{' '}
               <button
-                onClick={() => navigate('/jobs')}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors"
+                onClick={() => window.location.reload()}
+                className="text-brand-600 hover:underline font-medium"
               >
-                Browse All Openings <ArrowRight className="w-3.5 h-3.5" />
+                Retry
               </button>
-            }
-          />
-
-          {isLoading ? (
-            <LoadingSkeleton count={4} />
+            </div>
           ) : latestJobs.length === 0 ? (
-            <div className="p-8 bg-canvas-card border border-canvas-border rounded-card text-center text-sm text-ink-500">
-              No recent openings listed at the moment.
+            <div className="py-10 text-center text-sm text-ink-400">
+              No recent listings available.{' '}
+              <Link to="/jobs" className="text-brand-600 hover:underline font-medium">
+                View all
+              </Link>
             </div>
           ) : (
-            <motion.div
-              variants={shouldReduceMotion ? undefined : staggerContainer}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-1 md:grid-cols-2 gap-4"
-            >
+            <motion.div {...staggerProps} className="space-y-3">
               {latestJobs.map((job) => (
-                <motion.div key={`latest-${job.id}`} variants={shouldReduceMotion ? undefined : staggerItem}>
+                <motion.div key={job.id} variants={staggerItem}>
                   <JobCard
                     job={job}
                     onClick={() => navigate(`/jobs/${job.slug}`)}
@@ -326,268 +490,179 @@ export const LandingPage: React.FC = () => {
             </motion.div>
           )}
         </PageContainer>
-      </motion.section>
+      </section>
 
-      {/* 5. EXPLORE CATEGORIES */}
-      <motion.section
-        id="categories"
-        className="py-2"
-        variants={shouldReduceMotion ? undefined : fadeInUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-60px' }}
-      >
-        <PageContainer size="wide" className="space-y-6">
-          <SectionHeading
-            title="Explore by Discipline"
-            subtitle="Explore available career opportunities organized by technical domains and roles."
-            tag="Disciplines"
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {categories.map((category) => (
-              <button
-                key={category.key}
-                type="button"
-                onClick={() => navigate(`/jobs?category=${encodeURIComponent(category.key)}`)}
-                className="p-5 text-left bg-canvas-card border border-canvas-border rounded-card hover:border-brand-400 hover:shadow-card-hover transition-all group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="w-8 h-8 rounded-badge bg-canvas-subtle text-ink-700 group-hover:bg-brand-50 group-hover:text-brand-600 flex items-center justify-center mb-3 transition-colors">
-                    <Layers className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-bold text-ink-900 group-hover:text-brand-600 transition-colors">
-                    {category.name}
-                  </h3>
-                  <p className="text-xs text-ink-500 mt-1.5 leading-relaxed line-clamp-2">
-                    {category.description}
-                  </p>
-                </div>
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 mt-4 group-hover:translate-x-0.5 transition-transform">
-                  Explore roles <ArrowRight className="w-3 h-3" />
-                </span>
-              </button>
-            ))}
-          </div>
-        </PageContainer>
-      </motion.section>
-
-      {/* 6. FRESHER AND EXPERIENCED CAREER PATHWAYS */}
-      <motion.section
-        className="py-4"
-        variants={shouldReduceMotion ? undefined : fadeInUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-60px' }}
-      >
+      {/* ================================================================= */}
+      {/* HOW IT WORKS                                                        */}
+      {/* ================================================================= */}
+      <section className="py-14 border-t border-canvas-border">
         <PageContainer size="wide">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Freshers & Graduates Pathway */}
-            <div className="p-8 rounded-card bg-gradient-to-br from-brand-50/60 to-canvas-card border border-brand-200/60 shadow-sm flex flex-col justify-between space-y-6">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-button bg-brand-100/70 text-brand-700 flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6" />
-                </div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600 block">
-                  Campus & Early Career
-                </span>
-                <h3 className="text-2xl font-bold text-ink-900">
-                  Fresher & Graduate Roles
-                </h3>
-                <p className="text-sm text-ink-600 leading-relaxed">
-                  Tailored opportunities welcoming entry-level applicants, recent university graduates, and candidates starting their technology journey with zero prior experience requirements.
-                </p>
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => navigate('/jobs?fresher=true')}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-brand-700 hover:text-brand-800 transition-colors group"
-                >
-                  Explore Fresher Opportunities
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-            </div>
-
-            {/* Experienced Professionals Pathway */}
-            <div className="p-8 rounded-card bg-canvas-card border border-canvas-border shadow-sm flex flex-col justify-between space-y-6">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-button bg-ink-100 text-ink-800 flex items-center justify-center">
-                  <Briefcase className="w-6 h-6" />
-                </div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-ink-500 block">
-                  Mid & Senior Career
-                </span>
-                <h3 className="text-2xl font-bold text-ink-900">
-                  Experienced Professionals
-                </h3>
-                <p className="text-sm text-ink-600 leading-relaxed">
-                  Specialized roles for mid-level developers, tech leads, engineering managers, and principal architects seeking verified responsibilities, stack requirements, and salary transparency.
-                </p>
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => navigate('/jobs?experienceLevel=SENIOR')}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-ink-900 hover:text-brand-600 transition-colors group"
-                >
-                  Explore Senior Openings
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </PageContainer>
-      </motion.section>
-
-      {/* 7. HOW THE PLATFORM WORKS */}
-      <motion.section
-        className="bg-canvas-card border-y border-canvas-border py-16"
-        variants={shouldReduceMotion ? undefined : fadeInUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-60px' }}
-      >
-        <PageContainer size="wide" className="space-y-12">
-          <div className="max-w-2xl mx-auto text-center space-y-3">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-600">
-              Straightforward Flow
+          <motion.div {...animProps} className="mb-10 max-w-xl">
+            <span className="text-xs font-semibold tracking-widest uppercase text-brand-600 block mb-2">
+              Process
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-900">
-              How Find My Job Works
+            <h2 className="text-2xl font-bold text-ink-900 mb-3">
+              How it works
             </h2>
             <p className="text-sm text-ink-500 leading-relaxed">
-              No account creation, no password fatigue, and no intermediary candidate data storage.
+              From search to application in four straightforward steps.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 bg-canvas-subtle/50 border border-canvas-border rounded-card space-y-3 text-left">
-              <div className="w-10 h-10 rounded-button bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-sm">
-                01
-              </div>
-              <h3 className="text-base font-bold text-ink-900">Discover Opportunities</h3>
-              <p className="text-xs text-ink-600 leading-relaxed">
-                Filter by technical discipline, fresher eligibility, experience tier, work mode, and location to find exactly what aligns with your background.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16">
+            <motion.div
+              variants={fadeInLeft}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+            >
+              <HowStep
+                step="01"
+                icon={<Search className="w-5 h-5" />}
+                title="Search with filters"
+                body="Enter keywords, location, or browse by category. Filter by employment type, work mode, experience level, and salary to narrow results."
+              />
+              <HowStep
+                step="02"
+                icon={<SlidersHorizontal className="w-5 h-5" />}
+                title="Review listings"
+                body="Each listing shows role details, location, salary where disclosed, and employer information. No gated previews."
+              />
+            </motion.div>
 
-            <div className="p-6 bg-canvas-subtle/50 border border-canvas-border rounded-card space-y-3 text-left">
-              <div className="w-10 h-10 rounded-button bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-sm">
-                02
-              </div>
-              <h3 className="text-base font-bold text-ink-900">Examine Details</h3>
-              <p className="text-xs text-ink-600 leading-relaxed">
-                Review complete job descriptions, skills required, responsibilities, and verified compensation disclosures without speculative guesswork.
-              </p>
-            </div>
-
-            <div className="p-6 bg-canvas-subtle/50 border border-canvas-border rounded-card space-y-3 text-left">
-              <div className="w-10 h-10 rounded-button bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-sm">
-                03
-              </div>
-              <h3 className="text-base font-bold text-ink-900">Apply Directly</h3>
-              <p className="text-xs text-ink-600 leading-relaxed">
-                Follow the verified application link directly to the employer's official careers portal. Your application is submitted directly to the hiring team.
-              </p>
-            </div>
+            <motion.div
+              variants={fadeInRight}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+            >
+              <HowStep
+                step="03"
+                icon={<Bookmark className="w-5 h-5" />}
+                title="Save roles you like"
+                body="Create a free account to bookmark opportunities and track your applications. Your saved jobs are available from your dashboard."
+              />
+              <HowStep
+                step="04"
+                icon={<FileText className="w-5 h-5" />}
+                title="Apply directly"
+                body="Applications go directly to the employer. We link to the original application page so nothing gets lost in translation."
+              />
+            </motion.div>
           </div>
         </PageContainer>
-      </motion.section>
+      </section>
 
-      {/* 8. WHY USE THIS PLATFORM / TRUST & VALUE */}
-      <motion.section
-        id="about"
-        className="py-8"
-        variants={shouldReduceMotion ? undefined : fadeInUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-60px' }}
-      >
-        <PageContainer size="wide" className="space-y-12">
-          <div className="max-w-2xl mx-auto text-center space-y-3">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-600">
-              Integrity First
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-900">
-              A cleaner, more transparent hiring destination
-            </h2>
-            <p className="text-sm text-ink-500 leading-relaxed">
-              We eliminate candidate clutter, walled gardens, and hidden salary estimates to connect talent with direct employer career portals.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 bg-canvas-card border border-canvas-border rounded-card space-y-3">
-              <div className="w-10 h-10 rounded-button bg-brand-50 text-brand-600 flex items-center justify-center">
-                <Globe className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-ink-900">100% Public Access</h3>
-              <p className="text-xs text-ink-600 leading-relaxed">
-                Zero candidate registration, password gates, or resume trapping. Browse jobs and examine company requirements without creating an account.
-              </p>
-            </div>
-
-            <div className="p-6 bg-canvas-card border border-canvas-border rounded-card space-y-3">
-              <div className="w-10 h-10 rounded-button bg-emerald-soft text-emerald-text flex items-center justify-center">
-                <Award className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-ink-900">Direct External Applications</h3>
-              <p className="text-xs text-ink-600 leading-relaxed">
-                Apply directly on genuine employer career pages. Every link is verified with clear, countdown-guided redirection.
-              </p>
-            </div>
-
-            <div className="p-6 bg-canvas-card border border-canvas-border rounded-card space-y-3">
-              <div className="w-10 h-10 rounded-button bg-ink-100 text-ink-800 flex items-center justify-center">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-ink-900">Honest Compensation</h3>
-              <p className="text-xs text-ink-600 leading-relaxed">
-                Clear compensation disclosures without speculative algorithms. Undisclosed salaries are marked plainly, never displayed as zero.
-              </p>
-            </div>
-          </div>
-        </PageContainer>
-      </motion.section>
-
-      {/* 9. SECONDARY JOB DISCOVERY CALL TO ACTION */}
-      <motion.section
-        className="pb-16"
-        variants={shouldReduceMotion ? undefined : fadeInUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-60px' }}
-      >
+      {/* ================================================================= */}
+      {/* VALUE PROPOSITION                                                   */}
+      {/* ================================================================= */}
+      <section className="py-14 border-t border-canvas-border bg-canvas-card">
         <PageContainer size="wide">
-          <div className="p-8 sm:p-12 rounded-card bg-ink-900 text-white text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-8 shadow-card-hover relative overflow-hidden">
-            <div className="space-y-2 max-w-xl relative z-10">
-              <span className="text-xs uppercase font-bold tracking-wider text-brand-300">
-                Start Exploring Today
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              variants={fadeInLeft}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+            >
+              <span className="text-xs font-semibold tracking-widest uppercase text-brand-600 block mb-3">
+                Why this platform
               </span>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                Ready to take the next step in your career?
+              <h2 className="text-2xl font-bold text-ink-900 mb-5 leading-tight">
+                Straightforward job discovery,
+                <br />
+                without the noise.
               </h2>
-              <p className="text-sm text-ink-200 leading-relaxed">
-                Discover the latest engineering, design, cloud, and product opportunities across verified hiring teams.
+              <p className="text-sm text-ink-500 leading-relaxed mb-6">
+                Job boards can be cluttered with spam, duplicates, and listings
+                that haven't been updated in months. Find My Job focuses on
+                quality — verified listings, transparent salary data, and
+                direct application links.
               </p>
-            </div>
-            <div className="relative z-10 shrink-0">
-              <PrimaryButton
-                size="lg"
-                onClick={() => navigate('/jobs')}
-                className="bg-white text-ink-900 hover:bg-ink-100 hover:text-ink-950 font-bold px-6 shadow-md"
-                icon={<ArrowRight className="w-4 h-4 text-brand-600" />}
-              >
-                Browse All Jobs
-              </PrimaryButton>
-            </div>
-            {/* Subtle background ambient glow */}
-            <div className="absolute right-0 top-0 bottom-0 w-96 bg-brand-600/10 rounded-full blur-3xl pointer-events-none" />
+              <ul className="space-y-3">
+                {[
+                  'Verified listings reviewed before publication',
+                  'Salary ranges shown where provided by employer',
+                  'Direct application links — no intermediaries',
+                  'Free candidate account with saved jobs',
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-ink-700">
+                    <CheckCircle2 className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            <motion.div
+              variants={fadeInRight}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              className="bg-canvas-subtle border border-canvas-border rounded-card p-8 space-y-4"
+            >
+              <h3 className="text-base font-semibold text-ink-900">
+                Looking for technology roles?
+              </h3>
+              <p className="text-sm text-ink-500 leading-relaxed">
+                We focus on engineering, design, product, data, and adjacent
+                technology disciplines. Listings are categorised and searchable
+                by employment type, work mode, and experience level.
+              </p>
+              <div className="flex flex-col gap-2 pt-2">
+                <button
+                  onClick={() => navigate('/jobs')}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-button bg-ink-900 text-white text-sm font-semibold hover:bg-ink-800 transition-colors"
+                >
+                  Browse open roles <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => navigate('/candidate/register')}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-button bg-canvas-card border border-canvas-border text-ink-700 text-sm font-medium hover:bg-canvas-hover transition-colors"
+                >
+                  Create a free account
+                </button>
+              </div>
+            </motion.div>
           </div>
         </PageContainer>
-      </motion.section>
+      </section>
+
+      {/* ================================================================= */}
+      {/* FINAL CTA                                                           */}
+      {/* ================================================================= */}
+      <section className="py-16 border-t border-canvas-border bg-ink-900">
+        <PageContainer size="wide">
+          <motion.div
+            {...animProps}
+            className="text-center max-w-xl mx-auto"
+          >
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight">
+              Ready to find your next role?
+            </h2>
+            <p className="text-ink-400 text-sm leading-relaxed mb-8">
+              Explore current openings across engineering, design, product, data
+              science, and more.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={() => navigate('/jobs')}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-button bg-white text-ink-900 font-semibold text-sm hover:bg-canvas-subtle transition-colors"
+              >
+                Browse all jobs <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => navigate('/categories')}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-button border border-ink-700 text-ink-300 font-medium text-sm hover:bg-ink-800 transition-colors"
+              >
+                Browse by category
+              </button>
+            </div>
+          </motion.div>
+        </PageContainer>
+      </section>
     </div>
   );
 };
+
+export default LandingPage;
