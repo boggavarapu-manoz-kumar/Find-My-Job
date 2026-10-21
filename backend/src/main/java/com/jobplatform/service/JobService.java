@@ -37,6 +37,11 @@ public interface JobService {
     List<JobResponseDTO> getFeaturedJobs();
 
     /**
+     * Public aggregated counts of active jobs grouped by category.
+     */
+    java.util.Map<String, Long> getCategoryCounts();
+
+    /**
      * Public related opportunities in same category.
      */
     List<JobResponseDTO> getRelatedJobs(String slug);

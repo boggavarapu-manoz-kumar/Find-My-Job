@@ -85,6 +85,22 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional(readOnly = true)
+    @org.springframework.cache.annotation.Cacheable(value = "categoryCounts")
+    public java.util.Map<String, Long> getCategoryCounts() {
+        List<Object[]> rows = jobRepository.countJobsGroupedByCategory(JobStatus.PUBLISHED);
+        java.util.Map<String, Long> counts = new java.util.HashMap<>();
+        for (Object[] row : rows) {
+            String cat = (String) row[0];
+            Long cnt = ((Number) row[1]).longValue();
+            if (cat != null) {
+                counts.put(cat, cnt);
+            }
+        }
+        return counts;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     @org.springframework.cache.annotation.Cacheable(value = "featuredJobs")
     public List<JobResponseDTO> getFeaturedJobs() {
         return jobRepository.findTop6ByStatusAndFeaturedTrueOrderByPublishedAtDesc(JobStatus.PUBLISHED)

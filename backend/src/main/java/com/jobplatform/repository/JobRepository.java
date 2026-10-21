@@ -61,9 +61,8 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     void incrementViewsCount(@Param("id") Long id);
 
     /**
-     * Increments application redirect click audit counter atomically.
+     * Aggregates active published job counts grouped by category in a single query.
      */
-    @Modifying
-    @Query("UPDATE Job j SET j.clicksCount = j.clicksCount + 1 WHERE j.id = :id")
-    void incrementClicksCount(@Param("id") Long id);
+    @Query("SELECT j.category, COUNT(j) FROM Job j WHERE j.status = :status GROUP BY j.category")
+    List<Object[]> countJobsGroupedByCategory(@Param("status") JobStatus status);
 }

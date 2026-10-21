@@ -124,19 +124,7 @@ export const CategoriesPage: React.FC = () => {
     setError(null);
 
     try {
-      const results = await Promise.all(
-        CATEGORY_DEFS.map((cat) =>
-          fetchCategoryCount(cat.key, controller.signal).then((count) => ({
-            key: cat.key,
-            count,
-          }))
-        )
-      );
-
-      const countsMap: Record<string, number> = {};
-      for (const r of results) {
-        countsMap[r.key] = r.count;
-      }
+      const countsMap = await jobService.getCategoryCounts(controller.signal);
       setCounts(countsMap);
     } catch (err) {
       if (!axios.isCancel(err)) {

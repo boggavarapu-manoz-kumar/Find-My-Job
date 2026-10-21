@@ -50,6 +50,31 @@ export const jobService = {
   },
 
   /**
+   * Fetch aggregated counts per category in a single request.
+   * Endpoint: GET /api/v1/public/jobs/categories
+   */
+  async getCategoryCounts(signal?: AbortSignal): Promise<Record<string, number>> {
+    const cacheKey = 'category_counts';
+    const cached = memoryCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data as Record<string, number>;
+    }
+
+    try {
+      const response = await apiClient.get<ApiResponse<Record<string, number>>>('/public/jobs/categories', {
+        signal,
+      });
+      if (response.data && response.data.success && response.data.data) {
+        memoryCache.set(cacheKey, { timestamp: Date.now(), data: response.data.data });
+        return response.data.data;
+      }
+      return {};
+    } catch {
+      return {};
+    }
+  },
+
+  /**
    * Fetch opportunities with server-side multi-criteria filtering and pagination.
    * Endpoint: GET /api/v1/public/jobs
    */
