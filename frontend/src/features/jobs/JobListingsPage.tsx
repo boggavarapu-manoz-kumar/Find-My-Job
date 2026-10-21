@@ -664,7 +664,7 @@ export const JobListingsPage: React.FC = () => {
               <JobCard
                 key={job.id}
                 job={job}
-                onClick={() => navigate(`/jobs/${job.slug}`)}
+                onClick={() => navigate(`/jobs/${job.slug}`, { state: { initialJob: job } })}
               />
             ))}
           </div>

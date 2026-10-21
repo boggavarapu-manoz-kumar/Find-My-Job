@@ -34,16 +34,16 @@ import { JobPostingSchema } from '../../components/seo/JobPostingSchema';
 export const JobDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
-
-  const [job, setJob] = useState<Job | null>(null);
+  const { state: routerState } = useLocation() as { state: { initialJob?: Job } | null };
+  const [job, setJob] = useState<Job | null>(routerState?.initialJob || null);
   const [relatedJobs, setRelatedJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!routerState?.initialJob);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const { isAuthenticated, user } = useAuth();
 
   // Candidate Actions state
   const [isSaved, setIsSaved] = useState(false);
@@ -52,12 +52,16 @@ export const JobDetailPage: React.FC = () => {
   // Fetch job record by slug
   const fetchJobData = useCallback(async (signal?: AbortSignal) => {
     if (!slug) return;
-    setIsLoading(true);
+    if (!routerState?.initialJob) {
+      setIsLoading(true);
+    }
     setErrorMessage(null);
 
     try {
       const jobData = await jobService.getJobBySlug(slug, signal);
-      setJob(jobData);
+      if (jobData) {
+        setJob(jobData);
+      }
 
       if (jobData) {
         // Fire related jobs concurrently in background without blocking main job content

@@ -15,6 +15,8 @@ const AdminDashboardPage = lazy(() => import('../features/admin/AdminDashboardPa
 const CandidateLoginPage = lazy(() => import('../features/candidate/CandidateLoginPage').then(m => ({ default: m.CandidateLoginPage })));
 const CandidateRegisterPage = lazy(() => import('../features/candidate/CandidateRegisterPage').then(m => ({ default: m.CandidateRegisterPage })));
 const CandidateDashboardPage = lazy(() => import('../features/candidate/CandidateDashboardPage').then(m => ({ default: m.CandidateDashboardPage })));
+const TermsOfServicePage = lazy(() => import('../features/legal/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
+const PrivacyPolicyPage = lazy(() => import('../features/legal/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
 
 const PageFallback: React.FC = () => (
   <div className="min-h-[50vh] flex items-center justify-center">
@@ -36,6 +38,8 @@ export const AppRoutes: React.FC = () => {
           <Route path="/jobs/:slug" element={<JobDetailPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
           {/* Candidate Auth */}
           <Route path="/candidate/login" element={<CandidateLoginPage />} />

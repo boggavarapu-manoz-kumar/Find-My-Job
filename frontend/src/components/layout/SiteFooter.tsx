@@ -38,9 +38,9 @@ export const SiteFooter: React.FC = () => {
             <h4 className="font-semibold text-ink-900 uppercase tracking-wider text-[11px]">Platform</h4>
             <ul className="space-y-1.5 text-ink-500">
               <li><a href="/about" className="hover:text-brand-600 transition-colors">About Us</a></li>
-              <li><span className="text-ink-400">Contact: support@findmyjob.com</span></li>
-              <li><span className="text-ink-400">Terms of Service (Draft)</span></li>
-              <li><span className="text-ink-400">Privacy Policy (Draft)</span></li>
+              <li><a href="mailto:support@findmyjob.site" className="hover:text-brand-600 transition-colors">Contact: support@findmyjob.site</a></li>
+              <li><a href="/terms" className="hover:text-brand-600 transition-colors">Terms of Service (Draft)</a></li>
+              <li><a href="/privacy" className="hover:text-brand-600 transition-colors">Privacy Policy (Draft)</a></li>
               <li><a href="/admin/login" className="hover:text-brand-600 transition-colors">Admin Dashboard</a></li>
             </ul>
           </div>

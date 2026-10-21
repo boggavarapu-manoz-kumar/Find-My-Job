@@ -396,7 +396,7 @@ export const LandingPage: React.FC = () => {
                 <motion.div key={job.id} variants={staggerItem}>
                   <JobCard
                     job={job}
-                    onClick={() => navigate(`/jobs/${job.slug}`)}
+                    onClick={() => navigate(`/jobs/${job.slug}`, { state: { initialJob: job } })}
                   />
                 </motion.div>
               ))}
@@ -489,7 +489,7 @@ export const LandingPage: React.FC = () => {
                 <motion.div key={job.id} variants={staggerItem}>
                   <JobCard
                     job={job}
-                    onClick={() => navigate(`/jobs/${job.slug}`)}
+                    onClick={() => navigate(`/jobs/${job.slug}`, { state: { initialJob: job } })}
                   />
                 </motion.div>
               ))}
