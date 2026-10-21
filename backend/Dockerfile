@@ -28,5 +28,5 @@ COPY --from=build /app/target/backend-1.0.0.jar app.jar
 # Expose standard application port
 EXPOSE 8080
 
-# Configure JVM memory limits suited for Render free tier (512MB RAM)
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+# Configure JVM performance and low memory limits suited for Render free tier (512MB RAM)
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", "-noverify", "-jar", "app.jar"]
