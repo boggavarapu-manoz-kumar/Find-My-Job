@@ -1,0 +1,174 @@
+import axios, { AxiosError } from 'axios';
+import apiClient from './client';
+import type { Job, PaginatedResponse, ApiResponse, JobFilterParams } from '../types/job.types';
+
+export type { JobFilterParams };
+
+export interface JobCategorySummary {
+  name: string;
+  key: string;
+  description: string;
+}
+
+export const jobService = {
+  /**
+   * Fetch featured positions for landing page showcase directly from Spring Boot REST API.
+   * Endpoint: GET /api/v1/public/jobs/featured
+   */
+  async getFeaturedJobs(signal?: AbortSignal): Promise<Job[]> {
+    try {
+      const response = await apiClient.get<ApiResponse<Job[]>>('/public/jobs/featured', {
+        signal,
+      });
+
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      throw new Error('Invalid response structure received for featured positions.');
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        throw error;
+      }
+      const axiosErr = error as AxiosError<ApiResponse<unknown>>;
+      const message =
+        axiosErr.response?.data?.message ||
+        axiosErr.message ||
+        'Unable to retrieve featured job opportunities from the server.';
+      throw new Error(message);
+    }
+  },
+
+  /**
+   * Fetch opportunities with server-side multi-criteria filtering and pagination.
+   * Endpoint: GET /api/v1/public/jobs
+   */
+  async getLatestJobs(params: JobFilterParams = {}, signal?: AbortSignal): Promise<PaginatedResponse<Job>> {
+    try {
+      const queryParams: Record<string, unknown> = {};
+
+      if (params.keyword?.trim()) queryParams.keyword = params.keyword.trim();
+      if (params.location?.trim()) queryParams.location = params.location.trim();
+      if (params.category?.trim()) queryParams.category = params.category.trim();
+      if (params.workMode) queryParams.workMode = params.workMode;
+      if (params.employmentType) queryParams.employmentType = params.employmentType;
+      if (params.experienceLevel) queryParams.experienceLevel = params.experienceLevel;
+      if (params.fresher !== undefined) queryParams.fresher = params.fresher;
+      if (params.salaryMin !== undefined && params.salaryMin >= 0) queryParams.salaryMin = params.salaryMin;
+      if (params.salaryMax !== undefined && params.salaryMax >= 0) queryParams.salaryMax = params.salaryMax;
+      if (params.sort) queryParams.sort = params.sort;
+      if (params.page !== undefined && params.page >= 0) queryParams.page = params.page;
+      if (params.size !== undefined && params.size > 0) queryParams.size = params.size;
+
+      const response = await apiClient.get<ApiResponse<PaginatedResponse<Job>>>('/public/jobs', {
+        params: queryParams,
+        signal,
+      });
+
+      if (response.data && response.data.success && response.data.data) {
+        const raw = response.data.data;
+        // Normalize boolean pagination properties across backend serializer variants
+        return {
+          content: raw.content || [],
+          pageNumber: raw.pageNumber ?? 0,
+          pageSize: raw.pageSize ?? (params.size || 10),
+          totalElements: raw.totalElements ?? 0,
+          totalPages: raw.totalPages ?? 1,
+          first: raw.first ?? raw.isFirst ?? raw.pageNumber === 0,
+          isFirst: raw.first ?? raw.isFirst ?? raw.pageNumber === 0,
+          last: raw.last ?? raw.isLast ?? (raw.pageNumber >= (raw.totalPages ?? 1) - 1),
+          isLast: raw.last ?? raw.isLast ?? (raw.pageNumber >= (raw.totalPages ?? 1) - 1),
+          hasNext: raw.hasNext ?? false,
+          hasPrevious: raw.hasPrevious ?? false,
+        };
+      }
+      throw new Error('Invalid response structure received for job opportunities.');
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        throw error;
+      }
+      const axiosErr = error as AxiosError<ApiResponse<unknown>>;
+      const message =
+        axiosErr.response?.data?.message ||
+        axiosErr.message ||
+        'Unable to retrieve job opportunities from the server.';
+      throw new Error(message);
+    }
+  },
+
+  /**
+   * Fetch single job by permanent slug.
+   * Endpoint: GET /api/v1/public/jobs/{slug}
+   * Returns null if the slug is unknown, unpublished, or archived (404).
+   */
+  async getJobBySlug(slug: string, signal?: AbortSignal): Promise<Job | null> {
+    try {
+      const response = await apiClient.get<ApiResponse<Job>>(`/public/jobs/${encodeURIComponent(slug)}`, {
+        signal,
+      });
+
+      if (response.data && response.data.success && response.data.data) {
+        // Enforce public access status constraint
+        if (response.data.data.status === 'PUBLISHED') {
+          return response.data.data;
+        }
+        return null;
+      }
+      return null;
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        throw error;
+      }
+      const axiosErr = error as AxiosError<ApiResponse<unknown>>;
+      if (axiosErr.response?.status === 404) {
+        return null;
+      }
+      const message =
+        axiosErr.response?.data?.message ||
+        axiosErr.message ||
+        'Failed to load job details. Please check connection.';
+      throw new Error(message);
+    }
+  },
+
+  /**
+   * Fetch related jobs in the same discipline.
+   * Endpoint: GET /api/v1/public/jobs/{slug}/related?limit={limit}
+   */
+  async getRelatedJobs(slug: string, limit: number = 3, signal?: AbortSignal): Promise<Job[]> {
+    try {
+      const response = await apiClient.get<ApiResponse<Job[]>>(
+        `/public/jobs/${encodeURIComponent(slug)}/related`,
+        {
+          params: { limit },
+          signal,
+        }
+      );
+
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        throw error;
+      }
+      // Related jobs failure is non-blocking for detail page
+      return [];
+    }
+  },
+
+  /**
+   * Discovery categories aligned with system ontology.
+   */
+  getCategories(): JobCategorySummary[] {
+    return [
+      { name: 'Software Engineering', key: 'Engineering', description: 'Full stack, backend, web systems and distributed platforms' },
+      { name: 'Design & Creative', key: 'Design', description: 'Design systems, product UI/UX and interaction architecture' },
+      { name: 'DevOps & Cloud', key: 'DevOps & Cloud', description: 'Site reliability, Kubernetes orchestration and CI/CD pipelines' },
+      { name: 'Data Science & AI', key: 'Data Science & AI', description: 'Applied machine learning, deep neural models and research' },
+      { name: 'Product Management', key: 'Product & Marketing', description: 'Technical product strategy, developer relations and growth' },
+    ];
+  },
+};
+
+export default jobService;

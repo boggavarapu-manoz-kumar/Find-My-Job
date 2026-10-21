@@ -1,0 +1,43 @@
+-- V2__create_jobs_table.sql
+-- Core job domain schema supporting search, lifecycle, filtering and SEO slugs
+
+CREATE TABLE IF NOT EXISTS jobs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    slug VARCHAR(160) NOT NULL,
+    title VARCHAR(160) NOT NULL,
+    company VARCHAR(120) NOT NULL,
+    company_logo VARCHAR(500) NULL,
+    category VARCHAR(80) NOT NULL,
+    employment_type VARCHAR(32) NOT NULL,
+    work_mode VARCHAR(32) NOT NULL,
+    experience_level VARCHAR(32) NOT NULL,
+    fresher_eligible BOOLEAN NOT NULL DEFAULT FALSE,
+    location VARCHAR(150) NOT NULL,
+    salary_min BIGINT NULL,
+    salary_max BIGINT NULL,
+    salary_currency VARCHAR(10) NOT NULL DEFAULT 'USD',
+    salary_period VARCHAR(20) NOT NULL DEFAULT 'YEAR',
+    hide_salary BOOLEAN NOT NULL DEFAULT FALSE,
+    description TEXT NOT NULL,
+    responsibilities TEXT NULL,
+    qualifications TEXT NULL,
+    skills VARCHAR(500) NULL,
+    application_url VARCHAR(1000) NOT NULL,
+    application_deadline DATE NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'DRAFT',
+    featured BOOLEAN NOT NULL DEFAULT FALSE,
+    views_count BIGINT NOT NULL DEFAULT 0,
+    clicks_count BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    published_at TIMESTAMP NULL,
+
+    CONSTRAINT uk_jobs_slug UNIQUE (slug),
+    INDEX idx_jobs_status_published (status, published_at),
+    INDEX idx_jobs_category (category),
+    INDEX idx_jobs_work_mode (work_mode),
+    INDEX idx_jobs_employment_type (employment_type),
+    INDEX idx_jobs_experience_level (experience_level),
+    INDEX idx_jobs_fresher (fresher_eligible),
+    INDEX idx_jobs_featured (featured)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
