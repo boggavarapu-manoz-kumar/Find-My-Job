@@ -79,6 +79,12 @@ export const jobService = {
    * Endpoint: GET /api/v1/public/jobs
    */
   async getLatestJobs(params: JobFilterParams = {}, signal?: AbortSignal): Promise<PaginatedResponse<Job>> {
+    const cacheKey = `jobs_query_${JSON.stringify(params)}`;
+    const cached = memoryCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < 30000) {
+      return cached.data as PaginatedResponse<Job>;
+    }
+
     try {
       const queryParams: Record<string, unknown> = {};
 
@@ -103,7 +109,7 @@ export const jobService = {
       if (response.data && response.data.success && response.data.data) {
         const raw = response.data.data;
         // Normalize boolean pagination properties across backend serializer variants
-        return {
+        const normalized: PaginatedResponse<Job> = {
           content: raw.content || [],
           pageNumber: raw.pageNumber ?? 0,
           pageSize: raw.pageSize ?? (params.size || 10),
@@ -116,6 +122,8 @@ export const jobService = {
           hasNext: raw.hasNext ?? false,
           hasPrevious: raw.hasPrevious ?? false,
         };
+        memoryCache.set(cacheKey, { timestamp: Date.now(), data: normalized });
+        return normalized;
       }
       throw new Error('Invalid response structure received for job opportunities.');
     } catch (error) {
