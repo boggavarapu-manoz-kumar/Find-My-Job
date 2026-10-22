@@ -3,6 +3,13 @@ spring:
     name: job-platform-backend
   profiles:
     active: dev
+  cache:
+    type: simple
+    cache-names:
+      - jobsBySlug
+      - featuredJobs
+      - relatedJobs
+      - categoryCounts
   flyway:
     enabled: true
     baseline-on-migrate: true

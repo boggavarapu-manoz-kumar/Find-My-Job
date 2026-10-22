@@ -75,14 +75,11 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
+    @org.springframework.cache.annotation.Cacheable(value = "jobsBySlug", key = "#slug")
     public JobResponseDTO getPublicJobBySlug(String slug) {
         Job job = jobRepository.findBySlugAndStatus(slug, JobStatus.PUBLISHED)
             .orElseThrow(() -> new ResourceNotFoundException("Job opportunity not found or no longer active"));
-
-        // Atomically increment public view metric
-        jobRepository.incrementViewsCount(job.getId());
-        job.setViewsCount(job.getViewsCount() + 1);
 
         return JobResponseDTO.fromEntity(job);
     }
@@ -129,7 +126,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
-    @org.springframework.cache.annotation.CacheEvict(value = {"featuredJobs", "relatedJobs"}, allEntries = true)
+    @org.springframework.cache.annotation.CacheEvict(value = {"featuredJobs", "relatedJobs", "categoryCounts", "jobsBySlug"}, allEntries = true)
     public JobResponseDTO createJob(JobCreateRequestDTO request) {
         // Generate collision-resistant permanent slug
         String slug = SlugUtils.generateJobSlug(request.getTitle(), request.getCompany());
@@ -181,7 +178,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
-    @org.springframework.cache.annotation.CacheEvict(value = {"featuredJobs", "relatedJobs"}, allEntries = true)
+    @org.springframework.cache.annotation.CacheEvict(value = {"featuredJobs", "relatedJobs", "categoryCounts", "jobsBySlug"}, allEntries = true)
     public JobResponseDTO updateJob(Long id, JobUpdateRequestDTO request) {
         Job job = jobRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Job with ID " + id + " not found"));
@@ -215,6 +212,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"featuredJobs", "relatedJobs", "categoryCounts", "jobsBySlug"}, allEntries = true)
     public JobResponseDTO updateJobStatus(Long id, JobStatusUpdateRequestDTO request) {
         Job job = jobRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Job with ID " + id + " not found"));
@@ -231,6 +229,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"featuredJobs", "relatedJobs", "categoryCounts", "jobsBySlug"}, allEntries = true)
     public void archiveJob(Long id) {
         Job job = jobRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Job with ID " + id + " not found"));

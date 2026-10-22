@@ -8,13 +8,23 @@ import java.time.LocalDateTime;
 @Table(
     name = "jobs",
     indexes = {
+        @Index(name = "idx_jobs_slug_status", columnList = "slug, status"),
         @Index(name = "idx_jobs_status_published", columnList = "status, published_at"),
         @Index(name = "idx_jobs_category", columnList = "category"),
         @Index(name = "idx_jobs_work_mode", columnList = "work_mode"),
         @Index(name = "idx_jobs_employment_type", columnList = "employment_type"),
         @Index(name = "idx_jobs_experience_level", columnList = "experience_level"),
         @Index(name = "idx_jobs_fresher", columnList = "fresher_eligible"),
-        @Index(name = "idx_jobs_featured", columnList = "featured")
+        @Index(name = "idx_jobs_featured", columnList = "featured"),
+        @Index(name = "idx_jobs_status_created", columnList = "status, created_at"),
+        @Index(name = "idx_jobs_status_category", columnList = "status, category"),
+        @Index(name = "idx_jobs_status_salary", columnList = "status, salary_max"),
+        @Index(name = "idx_jobs_status_published_desc", columnList = "status, published_at, id"),
+        @Index(name = "idx_jobs_status_workmode_published", columnList = "status, work_mode, published_at"),
+        @Index(name = "idx_jobs_status_type_published", columnList = "status, employment_type, published_at"),
+        @Index(name = "idx_jobs_status_exp_published", columnList = "status, experience_level, published_at"),
+        @Index(name = "idx_jobs_status_fresher_published", columnList = "status, fresher_eligible, published_at"),
+        @Index(name = "idx_jobs_status_category_id", columnList = "status, category, id, published_at")
     },
     uniqueConstraints = {
         @UniqueConstraint(name = "uk_jobs_slug", columnNames = {"slug"})

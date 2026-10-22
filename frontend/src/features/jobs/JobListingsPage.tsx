@@ -202,7 +202,10 @@ export const JobListingsPage: React.FC = () => {
   // ── Fetch jobs ────────────────────────────────────────────────────────────────
   const fetchJobs = useCallback(
     async (signal?: AbortSignal) => {
-      setIsLoading(true);
+      // Only show full blocking skeleton on very first initial load when there is zero content
+      if (paginatedData.content.length === 0) {
+        setIsLoading(true);
+      }
       setErrorMessage(null);
       try {
         const response = await jobService.getLatestJobs(

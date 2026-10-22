@@ -35,9 +35,12 @@ export const JobDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { state: routerState } = useLocation() as { state: { initialJob?: Job } | null };
-  const [job, setJob] = useState<Job | null>(routerState?.initialJob || null);
+
+  // Prioritize pre-passed job, then in-memory cached job for instant 0ms transition
+  const cachedJob = (slug ? jobService.getCachedJobBySlug(slug) : null) || routerState?.initialJob || null;
+  const [job, setJob] = useState<Job | null>(cachedJob);
   const [relatedJobs, setRelatedJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(!routerState?.initialJob);
+  const [isLoading, setIsLoading] = useState(!cachedJob);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [copiedLink, setCopiedLink] = useState(false);
@@ -52,7 +55,8 @@ export const JobDetailPage: React.FC = () => {
   // Fetch job record by slug
   const fetchJobData = useCallback(async (signal?: AbortSignal) => {
     if (!slug) return;
-    if (!routerState?.initialJob) {
+    const currentCached = jobService.getCachedJobBySlug(slug) || routerState?.initialJob;
+    if (!currentCached) {
       setIsLoading(true);
     }
     setErrorMessage(null);
@@ -121,7 +125,11 @@ export const JobDetailPage: React.FC = () => {
   }, [slug, isAuthenticated, user]);
 
   useEffect(() => {
-    if (!routerState?.initialJob) {
+    const existing = (slug ? jobService.getCachedJobBySlug(slug) : null) || routerState?.initialJob;
+    if (existing) {
+      setJob(existing);
+      setIsLoading(false);
+    } else {
       setIsLoading(true);
       setJob(null);
     }

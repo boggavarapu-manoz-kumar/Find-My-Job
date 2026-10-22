@@ -155,6 +155,17 @@ export const jobService = {
   },
 
   /**
+   * Synchronously retrieve job from memory cache if already pre-loaded (instant 0ms response).
+   */
+  getCachedJobBySlug(slug: string): Job | null {
+    const cached = memoryCache.get(`job_slug_${slug}`);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data as Job;
+    }
+    return null;
+  },
+
+  /**
    * Fetch single job by permanent slug.
    * Endpoint: GET /api/v1/public/jobs/{slug}
    * Returns null if the slug is unknown, unpublished, or archived (404).
