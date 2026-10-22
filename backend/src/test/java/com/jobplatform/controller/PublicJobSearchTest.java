@@ -83,7 +83,7 @@ class PublicJobSearchTest {
                 List.of(), 0, 10, 0, 1, true, true, false, false
         );
 
-        when(jobService.getPublicJobs(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(jobService.getPublicJobs(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(pageResponse);
 
         // title,asc

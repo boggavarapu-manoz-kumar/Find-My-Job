@@ -22,6 +22,8 @@ public interface JobService {
         Boolean fresher,
         Long salaryMin,
         Long salaryMax,
+        java.time.LocalDateTime fromDate,
+        java.time.LocalDateTime toDate,
         Pageable pageable
     );
 

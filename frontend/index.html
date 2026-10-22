@@ -1,7 +1,22 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Google tag (gtag.js) -->
+    <!-- Performance Preconnects & DNS Prefetch -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
+
+    <!-- Preload critical Inter font stylesheet -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap" />
+    </noscript>
+
+    <!-- Google tag (gtag.js) - loaded asynchronously without blocking first paint -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHQF1N9F6W"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -9,12 +24,13 @@
       gtag('js', new Date());
       gtag('config', 'G-JHQF1N9F6W');
     </script>
-    <!-- Google AdSense -->
+    <!-- Google AdSense - loaded async with deferral -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4420726622659440"
       crossorigin="anonymous"></script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Find My Job - The premier verified job discovery platform. Browse tech, marketing, engineering, design, and remote career opportunities." />
     <title>Find My Job - Verified Job Discovery Platform</title>
   </head>
   <body>

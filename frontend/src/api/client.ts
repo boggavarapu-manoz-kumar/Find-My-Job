@@ -22,14 +22,32 @@ apiClient.interceptors.request.use(
   (error: AxiosError) => Promise.reject(error)
 );
 
-// Response interceptor for centralized error reporting
+// Response interceptor with graceful retry for free server cold starts
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     if (error.response?.status === 401) {
       // Clear token if expired or invalid
       localStorage.removeItem('token');
+      return Promise.reject(error);
     }
+
+    // Auto-retry for cold starts on free servers (Render/Railway/etc) for idempotent GET requests
+    const config = error.config as InternalAxiosRequestConfig & { _retryCount?: number };
+    if (
+      config &&
+      config.method?.toUpperCase() === 'GET' &&
+      (!error.response || [502, 503, 504].includes(error.response.status))
+    ) {
+      config._retryCount = config._retryCount || 0;
+      if (config._retryCount < 2) {
+        config._retryCount += 1;
+        // Wait 1.5s before retrying cold start
+        await new Promise((resolve) => setTimeout(resolve, 1500 * config._retryCount!));
+        return apiClient(config);
+      }
+    }
+
     return Promise.reject(error);
   }
 );

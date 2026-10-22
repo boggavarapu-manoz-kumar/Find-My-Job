@@ -9,6 +9,21 @@ export default defineConfig({
     port: 5173,
     host: true,
   },
+  build: {
+    target: 'es2020',
+    sourcemap: false,
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-icons': ['lucide-react'],
+          'vendor-motion': ['framer-motion'],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

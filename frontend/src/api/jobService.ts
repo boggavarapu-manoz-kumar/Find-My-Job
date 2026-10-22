@@ -103,6 +103,9 @@ export const jobService = {
       if (params.fresher !== undefined) queryParams.fresher = params.fresher;
       if (params.salaryMin !== undefined && params.salaryMin >= 0) queryParams.salaryMin = params.salaryMin;
       if (params.salaryMax !== undefined && params.salaryMax >= 0) queryParams.salaryMax = params.salaryMax;
+      if (params.dateFilter) queryParams.dateFilter = params.dateFilter;
+      if (params.dateFrom) queryParams.dateFrom = params.dateFrom;
+      if (params.dateTo) queryParams.dateTo = params.dateTo;
       if (params.sort) queryParams.sort = params.sort;
       if (params.page !== undefined && params.page >= 0) queryParams.page = params.page;
       if (params.size !== undefined && params.size > 0) queryParams.size = params.size;

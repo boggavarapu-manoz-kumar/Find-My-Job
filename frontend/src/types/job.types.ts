@@ -67,6 +67,9 @@ export interface JobFilterParams {
   fresher?: boolean;
   salaryMin?: number;
   salaryMax?: number;
+  dateFilter?: string;
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   size?: number;
   sort?: string;

@@ -23,7 +23,9 @@ public final class JobSpecifications {
         ExperienceLevel experienceLevel,
         Boolean fresher,
         Long salaryMin,
-        Long salaryMax
+        Long salaryMax,
+        java.time.LocalDateTime fromDate,
+        java.time.LocalDateTime toDate
     ) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -86,6 +88,20 @@ public final class JobSpecifications {
                 predicates.add(cb.and(
                     cb.isNotNull(root.get("salaryMin")),
                     cb.lessThanOrEqualTo(root.get("salaryMin"), salaryMax)
+                ));
+            }
+
+            // Rule 11: Date range filter based on publication date (fallback to createdAt)
+            if (fromDate != null) {
+                predicates.add(cb.greaterThanOrEqualTo(
+                    cb.coalesce(root.get("publishedAt"), root.get("createdAt")),
+                    fromDate
+                ));
+            }
+            if (toDate != null) {
+                predicates.add(cb.lessThanOrEqualTo(
+                    cb.coalesce(root.get("publishedAt"), root.get("createdAt")),
+                    toDate
                 ));
             }
 

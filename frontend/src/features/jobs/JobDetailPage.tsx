@@ -338,6 +338,10 @@ export const JobDetailPage: React.FC = () => {
               <Clock className="w-4 h-4 text-ink-400" />
               {formatSalary(job)}
             </span>
+            <span className="inline-flex items-center gap-1.5 text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200 font-medium">
+              <Calendar className="w-3.5 h-3.5 text-brand-600" />
+              Posted {new Date(job.publishedAt || job.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
             {job.applicationDeadline ? (
               <span className="inline-flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-ink-400" />

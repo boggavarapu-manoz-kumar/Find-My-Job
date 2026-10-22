@@ -38,6 +38,9 @@ public class PublicJobController {
         @RequestParam(required = false) Boolean fresher,
         @RequestParam(required = false) Long salaryMin,
         @RequestParam(required = false) Long salaryMax,
+        @RequestParam(required = false) String dateFilter,
+        @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate dateFrom,
+        @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate dateTo,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(defaultValue = "publishedAt,desc") String sort
@@ -45,6 +48,43 @@ public class PublicJobController {
         // Enforce safe pagination bounds
         int validatedPage = Math.max(page, 0);
         int validatedSize = Math.min(Math.max(size, 1), 50);
+
+        // Calculate date boundaries based on dateFilter or custom date range
+        java.time.LocalDateTime calculatedFromDate = null;
+        java.time.LocalDateTime calculatedToDate = null;
+        java.time.LocalDate today = java.time.LocalDate.now();
+
+        if (dateFilter != null && !dateFilter.isBlank()) {
+            switch (dateFilter.toLowerCase().trim()) {
+                case "today":
+                    calculatedFromDate = today.atStartOfDay();
+                    calculatedToDate = today.atTime(java.time.LocalTime.MAX);
+                    break;
+                case "yesterday":
+                    calculatedFromDate = today.minusDays(1).atStartOfDay();
+                    calculatedToDate = today.minusDays(1).atTime(java.time.LocalTime.MAX);
+                    break;
+                case "past3days":
+                    calculatedFromDate = today.minusDays(2).atStartOfDay();
+                    break;
+                case "pastweek":
+                    calculatedFromDate = today.minusDays(6).atStartOfDay();
+                    break;
+                case "pastmonth":
+                    calculatedFromDate = today.minusDays(29).atStartOfDay();
+                    break;
+                case "custom":
+                    if (dateFrom != null) calculatedFromDate = dateFrom.atStartOfDay();
+                    if (dateTo != null) calculatedToDate = dateTo.atTime(java.time.LocalTime.MAX);
+                    break;
+                default:
+                    // Treat unknown/all as unrestricted
+                    break;
+            }
+        } else {
+            if (dateFrom != null) calculatedFromDate = dateFrom.atStartOfDay();
+            if (dateTo != null) calculatedToDate = dateTo.atTime(java.time.LocalTime.MAX);
+        }
 
         // Validate salary numeric ranges
         if (salaryMin != null && salaryMin < 0) {
@@ -97,6 +137,8 @@ public class PublicJobController {
             fresher,
             salaryMin,
             salaryMax,
+            calculatedFromDate,
+            calculatedToDate,
             pageable
         );
 

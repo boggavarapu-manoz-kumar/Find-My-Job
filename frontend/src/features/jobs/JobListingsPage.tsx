@@ -13,6 +13,7 @@ import {
   MapPin,
   Sparkles,
   DollarSign,
+  Calendar,
 } from 'lucide-react';
 import { PageContainer } from '../../components/ui/PageContainer';
 import { SectionHeading } from '../../components/ui/SectionHeading';
@@ -62,6 +63,9 @@ export const JobListingsPage: React.FC = () => {
   const salaryMaxParam = searchParams.get('salaryMax')
     ? parseInt(searchParams.get('salaryMax')!, 10)
     : undefined;
+  const dateFilterParam = searchParams.get('dateFilter') || '';
+  const dateFromParam = searchParams.get('dateFrom') || '';
+  const dateToParam = searchParams.get('dateTo') || '';
 
   // ── Local draft state (debounced before URL commit) ──────────────────────────
   const [keywordInput, setKeywordInput] = useState(keywordParam);
@@ -73,6 +77,7 @@ export const JobListingsPage: React.FC = () => {
     salaryMaxParam !== undefined ? String(salaryMaxParam) : ''
   );
   const [isFilterOpenMobile, setIsFilterOpenMobile] = useState(false);
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(dateFilterParam === 'custom');
 
   // ── Data fetching state ──────────────────────────────────────────────────────
   const [paginatedData, setPaginatedData] = useState<PaginatedResponse<Job>>({
@@ -122,7 +127,32 @@ export const JobListingsPage: React.FC = () => {
     setLocationInput('');
     setSalaryMinInput('');
     setSalaryMaxInput('');
+    setShowCustomDatePicker(false);
     setSearchParams(new URLSearchParams());
+  };
+
+  // ── Date filter helpers ───────────────────────────────────────────────────────
+  const DATE_FILTER_OPTIONS = [
+    { value: 'today',     label: 'Today' },
+    { value: 'yesterday', label: 'Yesterday' },
+    { value: 'past3days', label: 'Last 3 Days' },
+    { value: 'pastweek',  label: 'Past Week' },
+    { value: 'pastmonth', label: 'Past Month' },
+    { value: 'custom',    label: 'Custom Range' },
+  ];
+
+  const handleDateFilterClick = (value: string) => {
+    if (value === 'custom') {
+      setShowCustomDatePicker(true);
+      updateFilters({ dateFilter: 'custom', dateFrom: null, dateTo: null });
+    } else {
+      setShowCustomDatePicker(false);
+      if (dateFilterParam === value) {
+        updateFilters({ dateFilter: null, dateFrom: null, dateTo: null });
+      } else {
+        updateFilters({ dateFilter: value, dateFrom: null, dateTo: null });
+      }
+    }
   };
 
   // ── Debounced keyword search ───────────────────────────────────────────────────
@@ -186,6 +216,9 @@ export const JobListingsPage: React.FC = () => {
             fresher: fresherParam ? true : undefined,
             salaryMin: salaryMinParam,
             salaryMax: salaryMaxParam,
+            dateFilter: dateFilterParam || undefined,
+            dateFrom: dateFromParam || undefined,
+            dateTo: dateToParam || undefined,
             sort: sortParam,
             page: pageParam,
             size: sizeParam,
@@ -215,6 +248,9 @@ export const JobListingsPage: React.FC = () => {
       fresherParam,
       salaryMinParam,
       salaryMaxParam,
+      dateFilterParam,
+      dateFromParam,
+      dateToParam,
       sortParam,
       pageParam,
       sizeParam,
@@ -240,8 +276,21 @@ export const JobListingsPage: React.FC = () => {
       experienceLevelParam ||
       fresherParam ||
       salaryMinParam !== undefined ||
-      salaryMaxParam !== undefined
+      salaryMaxParam !== undefined ||
+      dateFilterParam
   );
+
+  const dateFilterLabel = (v: string) => {
+    const map: Record<string, string> = {
+      today: 'Today',
+      yesterday: 'Yesterday',
+      past3days: 'Last 3 Days',
+      pastweek: 'Past Week',
+      pastmonth: 'Past Month',
+      custom: 'Custom Range',
+    };
+    return map[v] || v;
+  };
 
   // ── Active filter badge labels for quick-dismiss chips ───────────────────────
   const activeFilterChips: { label: string; paramKey: string | string[] }[] = [
@@ -261,6 +310,9 @@ export const JobListingsPage: React.FC = () => {
       : []),
     ...(salaryMaxParam !== undefined
       ? [{ label: `Max $${salaryMaxParam.toLocaleString()}`, paramKey: 'salaryMax' }]
+      : []),
+    ...(dateFilterParam
+      ? [{ label: `📅 ${dateFilterLabel(dateFilterParam)}`, paramKey: ['dateFilter', 'dateFrom', 'dateTo'] }]
       : []),
   ];
 
@@ -537,6 +589,85 @@ export const JobListingsPage: React.FC = () => {
                 Apply Range
               </SecondaryButton>
             </div>
+          </div>
+        </div>
+
+        {/* Date Posted Filter */}
+        <div
+          className={`pt-3 border-t border-canvas-border ${
+            isFilterOpenMobile ? 'block' : 'hidden md:block'
+          }`}
+        >
+          <div className="space-y-2">
+            <label className="text-[11px] font-semibold text-ink-500 uppercase tracking-wider flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-brand-600" />
+              Date Posted
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {[{ value: 'today', label: 'Today' }, { value: 'yesterday', label: 'Yesterday' }, { value: 'past3days', label: 'Last 3 Days' }, { value: 'pastweek', label: 'Past Week' }, { value: 'pastmonth', label: 'Past Month' }, { value: 'custom', label: '📅 Custom' }].map((opt) => {
+                const isActive = dateFilterParam === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    id={`date-filter-${opt.value}`}
+                    onClick={() => handleDateFilterClick(opt.value)}
+                    aria-pressed={isActive}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all duration-150 ${
+                      isActive
+                        ? 'bg-brand-600 text-white border-brand-600 shadow-sm'
+                        : 'bg-canvas-subtle text-ink-600 border-canvas-border hover:border-brand-400 hover:text-brand-700 hover:bg-brand-50'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Custom date range picker — only shown when 'Custom' is active */}
+            {showCustomDatePicker && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-center gap-2 flex-1">
+                  <label htmlFor="date-from" className="text-[11px] font-semibold text-ink-500 whitespace-nowrap">
+                    From
+                  </label>
+                  <input
+                    id="date-from"
+                    type="date"
+                    value={dateFromParam}
+                    max={dateToParam || undefined}
+                    onChange={(e) => updateFilters({ dateFilter: 'custom', dateFrom: e.target.value || null })}
+                    aria-label="Posted from date"
+                    className="flex-1 h-8 px-2 rounded-button bg-canvas-subtle border border-canvas-border text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-brand-600 transition-colors"
+                  />
+                </div>
+                <div className="flex items-center gap-2 flex-1">
+                  <label htmlFor="date-to" className="text-[11px] font-semibold text-ink-500 whitespace-nowrap">
+                    To
+                  </label>
+                  <input
+                    id="date-to"
+                    type="date"
+                    value={dateToParam}
+                    min={dateFromParam || undefined}
+                    onChange={(e) => updateFilters({ dateFilter: 'custom', dateTo: e.target.value || null })}
+                    aria-label="Posted to date"
+                    className="flex-1 h-8 px-2 rounded-button bg-canvas-subtle border border-canvas-border text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-brand-600 transition-colors"
+                  />
+                </div>
+                {(dateFromParam || dateToParam) && (
+                  <button
+                    type="button"
+                    onClick={() => updateFilters({ dateFrom: null, dateTo: null })}
+                    className="text-[11px] text-ink-400 hover:text-ink-700 transition-colors whitespace-nowrap"
+                    aria-label="Clear custom date range"
+                  >
+                    Clear dates
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

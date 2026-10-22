@@ -38,6 +38,8 @@ public class JobServiceImpl implements JobService {
         Boolean fresher,
         Long salaryMin,
         Long salaryMax,
+        java.time.LocalDateTime fromDate,
+        java.time.LocalDateTime toDate,
         Pageable pageable
     ) {
         Specification<Job> spec = JobSpecifications.withPublicFilters(
@@ -49,7 +51,9 @@ public class JobServiceImpl implements JobService {
             experienceLevel,
             fresher,
             salaryMin,
-            salaryMax
+            salaryMax,
+            fromDate,
+            toDate
         );
 
         Page<Job> page = jobRepository.findAll(spec, pageable);

@@ -70,7 +70,7 @@ class JobControllerTest {
             List.of(dto), 0, 10, 1, 1, true, true, false, false
         );
 
-        when(jobService.getPublicJobs(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(jobService.getPublicJobs(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
             .thenReturn(pageResponse);
 
         mockMvc.perform(get("/api/v1/public/jobs")
