@@ -11,11 +11,9 @@ public class JobApplicationRequestDTO {
     @NotNull(message = "Job ID cannot be null")
     private Long jobId;
 
-    @NotBlank(message = "Candidate name cannot be blank")
     @Size(max = 150, message = "Candidate name cannot exceed 150 characters")
     private String candidateName;
 
-    @NotBlank(message = "Candidate email cannot be blank")
     @Email(message = "Candidate email must be a valid email address")
     @Size(max = 150, message = "Candidate email cannot exceed 150 characters")
     private String candidateEmail;
@@ -23,9 +21,8 @@ public class JobApplicationRequestDTO {
     @Size(max = 50, message = "Candidate phone cannot exceed 50 characters")
     private String candidatePhone;
 
-    @NotBlank(message = "Resume URL cannot be blank")
     @Size(max = 1000, message = "Resume URL cannot exceed 1000 characters")
-    @Pattern(regexp = "^https?://.+", message = "Resume URL must be a valid HTTP/HTTPS link")
+    @Pattern(regexp = "^(https?://.+)?$", message = "Resume URL must be a valid HTTP/HTTPS link if provided")
     private String resumeUrl;
 
     @Size(max = 5000, message = "Cover letter cannot exceed 5000 characters")

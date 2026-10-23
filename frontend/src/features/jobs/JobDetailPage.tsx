@@ -23,6 +23,7 @@ import { Badge, Tag } from '../../components/ui/Badge';
 import { JobCard } from '../../components/ui/JobCard';
 import { CompanyLogo } from '../../components/ui/CompanyLogo';
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton';
+import { ApplicationConfirmModal } from '../candidate/components/ApplicationConfirmModal';
 import { Toast } from '../../components/ui/Toast';
 import { jobService } from '../../api/jobService';
 import candidateService from '../../api/candidateService';
@@ -52,6 +53,8 @@ export const JobDetailPage: React.FC = () => {
   // Candidate Actions state
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isApplied, setIsApplied] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   // Fetch job record by slug
   const fetchJobData = useCallback(async (signal?: AbortSignal) => {
@@ -74,14 +77,19 @@ export const JobDetailPage: React.FC = () => {
           .then((related) => setRelatedJobs(related))
           .catch(() => {});
 
-        // Check if saved by candidate
+        // Check if saved and applied by candidate concurrently
         if (isAuthenticated && user?.role === 'ROLE_CANDIDATE') {
-          try {
-            const saved = await candidateService.checkSaved(jobData.id);
-            setIsSaved(saved);
-          } catch {
-            // Non-critical, ignore
-          }
+          Promise.allSettled([
+            candidateService.checkSaved(jobData.id),
+            candidateService.checkApplied(jobData.id),
+          ]).then(([savedResult, appliedResult]) => {
+            if (savedResult.status === 'fulfilled') {
+              setIsSaved(savedResult.value);
+            }
+            if (appliedResult.status === 'fulfilled') {
+              setIsApplied(appliedResult.value);
+            }
+          });
         }
 
         // Dynamic Document Title and SEO Metadata
@@ -178,6 +186,75 @@ export const JobDetailPage: React.FC = () => {
     } catch {
       setToastMessage('Link: ' + url);
     }
+  };
+
+  // ── Smart Application Tracking ──────────────────────────────────────────────
+  const [hasClickedApply, setHasClickedApply] = useState(false);
+
+  const handleApplyClick = () => {
+    if (!job) return;
+
+    if (!isValidHttpUrl(job.applicationUrl)) {
+      setToastMessage('Application link is invalid or uses an unsupported protocol.');
+      return;
+    }
+
+    // Open employer portal in new tab
+    window.open(job.applicationUrl, '_blank', 'noopener,noreferrer');
+
+    // If user is logged in as candidate and has not already applied, prime the confirmation prompt
+    if (isAuthenticated && user?.role === 'ROLE_CANDIDATE' && !isApplied) {
+      setHasClickedApply(true);
+      sessionStorage.setItem(`pending_apply_${job.id}`, 'true');
+    }
+  };
+
+  // When user returns to this window after viewing external portal, ask if they applied
+  useEffect(() => {
+    if (!job || !isAuthenticated || isApplied) return;
+
+    const checkReturn = () => {
+      const isPending = hasClickedApply || sessionStorage.getItem(`pending_apply_${job.id}`) === 'true';
+      if (isPending && !isApplied && document.visibilityState === 'visible') {
+        setIsConfirmModalOpen(true);
+      }
+    };
+
+    window.addEventListener('focus', checkReturn);
+    document.addEventListener('visibilitychange', checkReturn);
+
+    return () => {
+      window.removeEventListener('focus', checkReturn);
+      document.removeEventListener('visibilitychange', checkReturn);
+    };
+  }, [job, isAuthenticated, isApplied, hasClickedApply]);
+
+  const handleConfirmApplied = async () => {
+    if (!job) return;
+    try {
+      await candidateService.apply({
+        jobId: job.id,
+        candidateName: user?.username,
+      });
+      setIsApplied(true);
+      sessionStorage.removeItem(`pending_apply_${job.id}`);
+      setIsConfirmModalOpen(false);
+      setToastMessage('Application recorded! Added to your Applied Jobs dashboard.');
+    } catch (err: unknown) {
+      // If already applied or conflict, still mark applied locally
+      setIsApplied(true);
+      sessionStorage.removeItem(`pending_apply_${job.id}`);
+      setIsConfirmModalOpen(false);
+      setToastMessage(err instanceof Error ? err.message : 'Application status updated.');
+    }
+  };
+
+  const handleDismissModal = () => {
+    if (job) {
+      sessionStorage.removeItem(`pending_apply_${job.id}`);
+    }
+    setHasClickedApply(false);
+    setIsConfirmModalOpen(false);
   };
 
   const handleShare = async () => {
@@ -329,7 +406,13 @@ export const JobDetailPage: React.FC = () => {
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
+            {isApplied && (
+              <Badge variant="brand" size="sm" className="bg-emerald-50 text-emerald-700 border-emerald-300 font-bold">
+                <Check className="w-3 h-3 mr-1 inline text-emerald-600" />
+                Applied
+              </Badge>
+            )}
             {job.fresherEligible ? (
               <Badge variant="success" size="sm">
                 <Sparkles className="w-3 h-3 mr-1 inline" />
@@ -374,18 +457,12 @@ export const JobDetailPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <PrimaryButton
               size="lg"
-              icon={<ExternalLink className="w-4 h-4" />}
-              onClick={() => {
-                if (!job) return;
-                if (isValidHttpUrl(job.applicationUrl)) {
-                  window.open(job.applicationUrl, '_blank', 'noopener,noreferrer');
-                } else {
-                  setToastMessage('Application link is invalid or uses an unsupported protocol.');
-                }
-              }}
-              aria-label="Apply Now to external employer portal"
+              icon={isApplied ? <Check className="w-4 h-4 text-emerald-300" /> : <ExternalLink className="w-4 h-4" />}
+              className={isApplied ? 'bg-emerald-700 hover:bg-emerald-800' : ''}
+              onClick={handleApplyClick}
+              aria-label={isApplied ? 'Applied — Click to visit portal again' : 'Apply Now to external employer portal'}
             >
-              Apply Now
+              {isApplied ? 'Applied ✓ (Revisit Portal)' : 'Apply Now'}
             </PrimaryButton>
           </div>
 
@@ -481,6 +558,18 @@ export const JobDetailPage: React.FC = () => {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Application Confirmation Modal */}
+      {job && (
+        <ApplicationConfirmModal
+          isOpen={isConfirmModalOpen}
+          jobTitle={job.title}
+          companyName={job.company}
+          applicationUrl={job.applicationUrl}
+          onConfirmApplied={handleConfirmApplied}
+          onDismiss={handleDismissModal}
+        />
       )}
 
       {/* Toast Notification */}

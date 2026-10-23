@@ -18,6 +18,7 @@ import { PageContainer } from '../../components/ui/PageContainer';
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton';
+import { CompanyLogo } from '../../components/ui/CompanyLogo';
 import candidateService from '../../api/candidateService';
 import type { SavedJob, JobApplication, ApplicationStatus } from '../../types/candidate.types';
 import { useAuth } from '../../hooks/useAuth';
@@ -207,43 +208,51 @@ export const CandidateDashboardPage: React.FC = () => {
                   key={app.id}
                   className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-canvas-subtle transition-colors"
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-ink-400 uppercase tracking-wider">
-                        {app.company}
-                      </span>
-                      <Badge variant={getStatusBadgeVariant(app.status)} size="sm">
-                        {app.status.replace('_', ' ')}
-                      </Badge>
-                    </div>
+                  <div className="flex items-start gap-4 min-w-0">
+                    <CompanyLogo
+                      companyName={app.company}
+                      logoUrl={app.companyLogo}
+                      size="md"
+                      className="mt-0.5"
+                    />
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-ink-500 uppercase tracking-wider">
+                          {app.company}
+                        </span>
+                        <Badge variant={getStatusBadgeVariant(app.status)} size="sm">
+                          {app.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
 
-                    <Link
-                      to={`/jobs/${app.jobSlug}`}
-                      className="text-base sm:text-lg font-bold text-ink-900 hover:text-brand-600 transition-colors block"
-                    >
-                      {app.jobTitle}
-                    </Link>
+                      <Link
+                        to={`/jobs/${app.jobSlug}`}
+                        className="text-base sm:text-lg font-bold text-ink-900 hover:text-brand-600 transition-colors block truncate"
+                      >
+                        {app.jobTitle}
+                      </Link>
 
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-500">
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-ink-400" />
-                        {app.location}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-ink-400" />
-                        Submitted: {new Date(app.createdAt).toLocaleDateString()}
-                      </span>
-                      {app.resumeUrl && (
-                        <a
-                          href={app.resumeUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-brand-600 hover:underline"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          View Submitted Resume
-                        </a>
-                      )}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-500">
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-ink-400" />
+                          {app.location}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-ink-400" />
+                          Applied: {new Date(app.createdAt).toLocaleDateString()}
+                        </span>
+                        {app.resumeUrl && (
+                          <a
+                            href={app.resumeUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-brand-600 hover:underline"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            View Submitted Resume
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
 

@@ -49,10 +49,10 @@ export interface JobApplication {
 
 export interface JobApplicationRequest {
   jobId: number;
-  candidateName: string;
-  candidateEmail: string;
+  candidateName?: string;
+  candidateEmail?: string;
   candidatePhone?: string;
-  resumeUrl: string;
+  resumeUrl?: string;
   coverLetter?: string;
 }
 

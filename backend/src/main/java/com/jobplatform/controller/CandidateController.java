@@ -82,6 +82,14 @@ public class CandidateController {
         return ResponseEntity.ok(ApiResponse.success("Saved status checked", Map.of("isSaved", isSaved)));
     }
 
+    @GetMapping("/applications/{jobId}/check")
+    public ResponseEntity<ApiResponse<Map<String, Boolean>>> checkApplied(
+            @PathVariable Long jobId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        boolean isApplied = candidateService.isJobApplied(userDetails.getUsername(), jobId);
+        return ResponseEntity.ok(ApiResponse.success("Applied status checked", Map.of("isApplied", isApplied)));
+    }
+
     // --- Job Applications ---
 
     @PostMapping("/applications")

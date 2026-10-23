@@ -32,6 +32,13 @@ export const candidateService = {
     return response.data.data.isSaved;
   },
 
+  checkApplied: async (jobId: number): Promise<boolean> => {
+    const response = await apiClient.get<ApiResponse<{ isApplied: boolean }>>(
+      `/candidate/applications/${jobId}/check`
+    );
+    return response.data.data.isApplied;
+  },
+
   getSavedJobs: async (
     page: number = 0,
     size: number = 10,

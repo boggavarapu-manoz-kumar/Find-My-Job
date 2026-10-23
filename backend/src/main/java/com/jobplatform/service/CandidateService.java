@@ -18,6 +18,8 @@ public interface CandidateService {
 
     boolean isJobSaved(String username, Long jobId);
 
+    boolean isJobApplied(String username, Long jobId);
+
     // Job Applications
     JobApplicationResponseDTO applyToJob(String username, JobApplicationRequestDTO request);
 

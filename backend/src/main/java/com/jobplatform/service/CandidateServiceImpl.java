@@ -99,6 +99,13 @@ public class CandidateServiceImpl implements CandidateService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public boolean isJobApplied(String username, Long jobId) {
+        User user = getAuthenticatedUser(username);
+        return jobApplicationRepository.existsByUserIdAndJobId(user.getId(), jobId);
+    }
+
+    @Override
     public JobApplicationResponseDTO applyToJob(String username, JobApplicationRequestDTO request) {
         User user = getAuthenticatedUser(username);
         Job job = getPublishedJob(request.getJobId());
@@ -108,13 +115,23 @@ public class CandidateServiceImpl implements CandidateService {
         }
 
         try {
+            String candidateName = StringUtils.hasText(request.getCandidateName())
+                    ? request.getCandidateName().trim()
+                    : user.getUsername();
+            String candidateEmail = StringUtils.hasText(request.getCandidateEmail())
+                    ? request.getCandidateEmail().trim().toLowerCase()
+                    : user.getEmail();
+            String resumeUrl = StringUtils.hasText(request.getResumeUrl())
+                    ? request.getResumeUrl().trim()
+                    : (StringUtils.hasText(job.getApplicationUrl()) ? job.getApplicationUrl().trim() : "https://findmyjob.site");
+
             JobApplication application = new JobApplication(
                     user,
                     job,
-                    request.getCandidateName().trim(),
-                    request.getCandidateEmail().trim().toLowerCase(),
+                    candidateName,
+                    candidateEmail,
                     request.getCandidatePhone() != null ? request.getCandidatePhone().trim() : null,
-                    request.getResumeUrl().trim(),
+                    resumeUrl,
                     request.getCoverLetter() != null ? request.getCoverLetter().trim() : null
             );
 
