@@ -95,6 +95,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
 
   // Company management & autocomplete state
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
+  const [stagedLogoFile, setStagedLogoFile] = useState<File | null>(null);
   const [companySuggestions, setCompanySuggestions] = useState<CompanyResponse[]>([]);
   const [isSearchingCompany, setIsSearchingCompany] = useState(false);
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
@@ -262,10 +263,43 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      let finalCompanyId = selectedCompanyId;
+      let finalLogoUrl = formData.companyLogo.trim();
+
+      // If an image file was staged for upload (new company or newly selected file)
+      if (stagedLogoFile) {
+        try {
+          if (!finalCompanyId) {
+            // Create or resolve company first to obtain an ID for Cloudinary association
+            const createdCompany = await companyService.createCompany({
+              name: formData.company.trim(),
+            });
+            finalCompanyId = createdCompany.id;
+          }
+          if (finalCompanyId) {
+            const uploadRes = await companyService.uploadCompanyLogo(finalCompanyId, stagedLogoFile);
+            if (uploadRes && uploadRes.logoUrl) {
+              finalLogoUrl = uploadRes.logoUrl;
+            }
+          }
+        } catch (uploadErr) {
+          console.warn('Logo upload could not be completed prior to job creation:', uploadErr);
+          // If upload fails, avoid breaking the job post creation; fallback to null if still blob
+          if (finalLogoUrl.startsWith('blob:')) {
+            finalLogoUrl = '';
+          }
+        }
+      }
+
+      // Safeguard: Never send local blob: URLs to backend (which expects http/https or null)
+      if (finalLogoUrl.startsWith('blob:')) {
+        finalLogoUrl = '';
+      }
+
       const payload: Record<string, unknown> = {
         title: formData.title.trim(),
         company: formData.company.trim(),
-        companyLogo: formData.companyLogo.trim() || null,
+        companyLogo: finalLogoUrl || null,
         category: formData.category,
         employmentType: formData.employmentType,
         workMode: formData.workMode,
@@ -284,8 +318,8 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
         featured: formData.featured,
       };
 
-      if (selectedCompanyId) {
-        payload.companyId = selectedCompanyId;
+      if (finalCompanyId) {
+        payload.companyId = finalCompanyId;
       }
 
       if (formData.salaryMin) payload.salaryMin = Number(formData.salaryMin);
@@ -463,8 +497,9 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                     companyName={formData.company}
                     companyId={selectedCompanyId}
                     currentLogoUrl={formData.companyLogo}
-                    onLogoUpdated={(newLogoUrl) => {
+                    onLogoUpdated={(newLogoUrl, stagedFile) => {
                       setFormData((prev) => ({ ...prev, companyLogo: newLogoUrl || '' }));
+                      setStagedLogoFile(stagedFile || null);
                     }}
                   />
                   {errors.companyLogo && (
