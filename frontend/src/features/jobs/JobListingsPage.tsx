@@ -80,18 +80,38 @@ export const JobListingsPage: React.FC = () => {
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(dateFilterParam === 'custom');
 
   // ── Data fetching state ──────────────────────────────────────────────────────
-  const [paginatedData, setPaginatedData] = useState<PaginatedResponse<Job>>({
-    content: [],
-    pageNumber: 0,
-    pageSize: sizeParam,
-    totalElements: 0,
-    totalPages: 1,
-    isFirst: true,
-    isLast: true,
-    hasNext: false,
-    hasPrevious: false,
+  const [paginatedData, setPaginatedData] = useState<PaginatedResponse<Job>>(() => {
+    return (
+      jobService.getCachedLatestJobs({
+        keyword: keywordParam || undefined,
+        location: locationParam || undefined,
+        category: categoryParam || undefined,
+        workMode: workModeParam || undefined,
+        employmentType: employmentTypeParam || undefined,
+        experienceLevel: experienceLevelParam || undefined,
+        fresher: fresherParam ? true : undefined,
+        salaryMin: salaryMinParam,
+        salaryMax: salaryMaxParam,
+        dateFilter: dateFilterParam || undefined,
+        dateFrom: dateFromParam || undefined,
+        dateTo: dateToParam || undefined,
+        sort: sortParam,
+        page: pageParam,
+        size: sizeParam,
+      }) || {
+        content: [],
+        pageNumber: 0,
+        pageSize: sizeParam,
+        totalElements: 0,
+        totalPages: 1,
+        isFirst: true,
+        isLast: true,
+        hasNext: false,
+        hasPrevious: false,
+      }
+    );
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => paginatedData.content.length === 0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // ── Synchronize local draft inputs with URL params ────────────────────────────
@@ -230,13 +250,21 @@ export const JobListingsPage: React.FC = () => {
         );
 
         setPaginatedData(response);
+        setErrorMessage(null);
       } catch (err: unknown) {
         if (axios.isCancel(err)) return;
-        setErrorMessage(
-          err instanceof Error
-            ? err.message
-            : 'Unable to communicate with the jobs service. Please check your connection or retry.'
-        );
+        setPaginatedData((current) => {
+          if (current.content.length === 0) {
+            setErrorMessage(
+              err instanceof Error
+                ? err.message
+                : 'Unable to communicate with the jobs service. Please check your connection or retry.'
+            );
+          } else {
+            console.warn('Background job refresh delayed:', err);
+          }
+          return current;
+        });
       } finally {
         setIsLoading(false);
       }

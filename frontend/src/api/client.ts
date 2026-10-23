@@ -7,8 +7,8 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // 20 s default — free Render tier can take 15 s for BCrypt on a cold CPU
-  timeout: 20000,
+  // 45 s timeout — handles Render free tier container cold-wake cleanly without premature ECONNABORTED
+  timeout: 45000,
 });
 
 // Request interceptor — attach JWT token + extend timeout for auth endpoints (BCrypt is CPU-heavy)

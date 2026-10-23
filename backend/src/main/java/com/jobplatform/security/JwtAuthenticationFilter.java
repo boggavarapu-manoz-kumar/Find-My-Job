@@ -8,26 +8,37 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
+/**
+ * JWT authentication filter — runs once per request.
+ *
+ * <p><b>Performance-critical path:</b> roles are read directly from the JWT
+ * claims so there is <em>zero database round-trip</em> on authenticated
+ * requests.  The previous approach called {@code loadUserByUsername} on every
+ * request, which issued a SELECT against MySQL on each API call — unnecessary
+ * once the token is already signed and validated.
+ */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtTokenProvider tokenProvider;
-    private final CustomUserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, CustomUserDetailsService userDetailsService) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
         this.tokenProvider = tokenProvider;
-        this.userDetailsService = userDetailsService;
     }
 
     @Override
@@ -41,9 +52,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromToken(jwt);
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
+                // ── Read authorities directly from JWT — NO database call ──────────
+                String rolesStr = tokenProvider.getRolesFromToken(jwt);
+                List<SimpleGrantedAuthority> authorities;
+                if (StringUtils.hasText(rolesStr)) {
+                    authorities = Arrays.stream(rolesStr.split(","))
+                            .map(String::trim)
+                            .filter(r -> !r.isEmpty())
+                            .map(SimpleGrantedAuthority::new)
+                            .collect(Collectors.toList());
+                } else {
+                    authorities = Collections.emptyList();
+                }
+
+                org.springframework.security.core.userdetails.UserDetails userDetails =
+                        new org.springframework.security.core.userdetails.User(username, "", authorities);
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);

@@ -10,11 +10,50 @@ export interface JobCategorySummary {
   description: string;
 }
 
-// High-performance client-side in-memory cache
+// High-performance client-side multi-tier cache (RAM + SessionStorage)
 const memoryCache = new Map<string, { timestamp: number; data: unknown }>();
 const CACHE_TTL_MS = 60 * 1000; // 60 seconds
 
+function getPersisted<T>(key: string, maxAgeMs: number): T | null {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Date.now() - parsed.timestamp < maxAgeMs) {
+      return parsed.data as T;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function setPersisted(key: string, data: unknown): void {
+  try {
+    sessionStorage.setItem(key, JSON.stringify({ timestamp: Date.now(), data }));
+  } catch {
+    // ignore quota/disabled errors
+  }
+}
+
 export const jobService = {
+  clearCache(): void {
+    memoryCache.clear();
+    try {
+      sessionStorage.clear();
+    } catch {
+      // ignore
+    }
+  },
+  /**
+   * Synchronously return cached latest jobs for instant 0ms mount.
+   */
+  getCachedLatestJobs(params: JobFilterParams = {}): PaginatedResponse<Job> | null {
+    const cacheKey = `jobs_query_${JSON.stringify(params)}`;
+    const mem = memoryCache.get(cacheKey);
+    if (mem) return mem.data as PaginatedResponse<Job>;
+    return getPersisted<PaginatedResponse<Job>>(cacheKey, 10 * 60 * 1000);
+  },
   /**
    * Fetch featured positions for landing page showcase directly from Spring Boot REST API.
    * Endpoint: GET /api/v1/public/jobs/featured
@@ -90,6 +129,11 @@ export const jobService = {
     if (cached && Date.now() - cached.timestamp < 30000) {
       return cached.data as PaginatedResponse<Job>;
     }
+    const persisted = getPersisted<PaginatedResponse<Job>>(cacheKey, 60000);
+    if (persisted) {
+      memoryCache.set(cacheKey, { timestamp: Date.now(), data: persisted });
+      return persisted;
+    }
 
     try {
       const queryParams: Record<string, unknown> = {};
@@ -132,6 +176,7 @@ export const jobService = {
           hasPrevious: raw.hasPrevious ?? false,
         };
         memoryCache.set(cacheKey, { timestamp: Date.now(), data: normalized });
+        setPersisted(cacheKey, normalized);
         // Pre-warm individual slug cache so clicking any job opens at 0ms instantly
         normalized.content.forEach((j) => {
           if (j?.slug) {

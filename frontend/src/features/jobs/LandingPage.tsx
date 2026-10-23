@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   motion,
@@ -205,13 +205,12 @@ export const LandingPage: React.FC = () => {
   const categories = jobService.getCategories();
 
   // Fetch featured jobs
-  useEffect(() => {
-    const controller = new AbortController();
+  const loadFeatured = useCallback((signal?: AbortSignal) => {
     setIsLoadingFeatured(true);
     setFeaturedError(false);
 
     jobService
-      .getFeaturedJobs(controller.signal)
+      .getFeaturedJobs(signal)
       .then((jobs) => setFeaturedJobs(jobs.slice(0, 4)))
       .catch((err) => {
         if (!err?.message?.includes('cancel')) {
@@ -219,9 +218,13 @@ export const LandingPage: React.FC = () => {
         }
       })
       .finally(() => setIsLoadingFeatured(false));
-
-    return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadFeatured(controller.signal);
+    return () => controller.abort();
+  }, [loadFeatured]);
 
   // Fetch latest jobs
   useEffect(() => {
@@ -374,7 +377,7 @@ export const LandingPage: React.FC = () => {
             <div className="py-10 text-center text-sm text-ink-400">
               Could not load featured listings.{' '}
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => loadFeatured()}
                 className="text-brand-600 hover:underline font-medium"
               >
                 Retry

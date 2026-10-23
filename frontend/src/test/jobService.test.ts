@@ -6,6 +6,7 @@ import { DEV_FEATURED_JOBS, DEV_LATEST_JOBS } from '../features/jobs/fixtures';
 describe('jobService API Client', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    jobService.clearCache();
   });
 
   describe('getFeaturedJobs', () => {

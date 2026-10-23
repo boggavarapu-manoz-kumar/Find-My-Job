@@ -45,6 +45,21 @@ spring:
           plan_cache_max_size: 2048
           plan_parameter_metadata_max_size: 128
 
+  # ── Caffeine-backed Spring Cache ─────────────────────────────────────────────
+  # Caffeine is the fastest JVM in-process cache (O(1), window-TinyLFU eviction).
+  # No network, no serialisation overhead — sub-microsecond read latency.
+  cache:
+    type: caffeine
+    caffeine:
+      # Default spec — any cache without a specific CaffeineSpec bean
+      spec: maximumSize=500,expireAfterWrite=300s
+    cache-names:
+      - publicJobs       # paginated job search — 5 min TTL
+      - jobsBySlug       # job detail page — 5 min TTL (high read, low write)
+      - featuredJobs     # landing page featured — 5 min TTL
+      - categoryCounts   # category counts — 5 min TTL
+      - relatedJobs      # related jobs sidebar — 5 min TTL
+
 server:
   compression:
     enabled: true
