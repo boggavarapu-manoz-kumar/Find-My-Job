@@ -195,19 +195,22 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
 
-  const [featuredJobs, setFeaturedJobs] = useState<Job[]>([]);
-  const [latestJobs, setLatestJobs] = useState<Job[]>([]);
-  const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
-  const [isLoadingLatest, setIsLoadingLatest] = useState(true);
+  // Instant 0ms initial state from multi-tier cache
+  const cachedFeatured = jobService.getCachedFeaturedJobs();
+  const cachedLatest = jobService.getCachedLatestJobs({ sort: 'publishedAt,desc', size: 6 });
+
+  const [featuredJobs, setFeaturedJobs] = useState<Job[]>(() => cachedFeatured.slice(0, 4));
+  const [latestJobs, setLatestJobs] = useState<Job[]>(() => cachedLatest?.content || []);
+  const [isLoadingFeatured, setIsLoadingFeatured] = useState(() => cachedFeatured.length === 0);
+  const [isLoadingLatest, setIsLoadingLatest] = useState(() => !cachedLatest || cachedLatest.content.length === 0);
   const [featuredError, setFeaturedError] = useState(false);
   const [latestError, setLatestError] = useState(false);
 
   const categories = jobService.getCategories();
 
   // ── Single coordinated prefetch ─ fires featured + latest + categories in parallel
+  // Stale-While-Revalidate: If data is already rendered, update silently in the background
   const loadLandingData = useCallback((signal?: AbortSignal) => {
-    setIsLoadingFeatured(true);
-    setIsLoadingLatest(true);
     setFeaturedError(false);
     setLatestError(false);
 

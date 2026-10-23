@@ -69,6 +69,12 @@ export const jobService = {
     if (mem) return mem.data as PaginatedResponse<Job>;
     return getPersisted<PaginatedResponse<Job>>(cacheKey, 10 * 60 * 1000);
   },
+  getCachedFeaturedJobs(): Job[] {
+    const cacheKey = 'featured_jobs';
+    const mem = memoryCache.get(cacheKey);
+    if (mem) return mem.data as Job[];
+    return getPersisted<Job[]>(cacheKey, 10 * 60 * 1000) || [];
+  },
   /**
    * Fetch featured positions for landing page showcase directly from Spring Boot REST API.
    * Endpoint: GET /api/v1/public/jobs/featured
