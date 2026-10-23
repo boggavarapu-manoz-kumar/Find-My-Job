@@ -66,11 +66,17 @@ export const AdminDashboardPage: React.FC = () => {
   // Handle Create or Edit Submit
   const handleModalSubmit = async (payload: Record<string, unknown>) => {
     if (modalMode === 'create') {
-      await adminJobService.createJob(payload);
+      const created = await adminJobService.createJob(payload);
       setSuccessMessage('Job position created successfully.');
+      // Instantly clear cached job lists so the public listings display the new job immediately
+      import('../../api/jobService').then((m) => m.jobService.clearCache());
+      setJobs((prev) => [created, ...prev]);
+      setTotalJobs((prev) => prev + 1);
     } else if (selectedJob) {
-      await adminJobService.updateJob(selectedJob.id, payload);
+      const updated = await adminJobService.updateJob(selectedJob.id, payload);
       setSuccessMessage(`Job "${selectedJob.title}" updated successfully.`);
+      import('../../api/jobService').then((m) => m.jobService.clearCache());
+      setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
     }
     setTimeout(() => setSuccessMessage(null), 4000);
     fetchJobs();
