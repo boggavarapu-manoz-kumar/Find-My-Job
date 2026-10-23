@@ -66,12 +66,8 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                     "public_id",     uniquePublicId,
                     "overwrite",     true,
                     "resource_type", "image",
-                    "tags",          "company-logo",
-                    // Pre-generate optimised 200x200 variant at upload time — first CDN hit is instant
-                    "eager",         "c_fit,w_200,h_200,q_auto,f_auto",
-                    "eager_async",   false,
-                    "quality",       "auto",
-                    "fetch_format",  "auto",
+                    "tags",          java.util.Collections.singletonList("company-logo"),
+                    "transformation", new com.cloudinary.Transformation<>().width(200).height(200).crop("fit").quality("auto").fetchFormat("auto"),
                     "timeout",       30000   // 30 s — free Cloudinary can be slow
             ));
 
