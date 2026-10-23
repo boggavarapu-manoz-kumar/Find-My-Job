@@ -1,18 +1,22 @@
 -- V10__create_companies_and_associate_jobs.sql
 -- Creates reusable company identity entity and links existing jobs
+--
+-- Collation note: all text columns that are compared against jobs.company
+-- use COLLATE utf8mb4_unicode_ci explicitly so the JOIN/WHERE predicates
+-- never produce "Illegal mix of collations" regardless of server defaults.
 
 CREATE TABLE IF NOT EXISTS companies (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(120) NOT NULL,
-    normalized_name VARCHAR(120) NOT NULL,
-    slug VARCHAR(160) NOT NULL,
+    id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name          VARCHAR(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    normalized_name VARCHAR(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    slug          VARCHAR(160) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     logo_asset_id VARCHAR(100) NULL,
     logo_public_id VARCHAR(255) NULL,
-    logo_url VARCHAR(500) NULL,
+    logo_url      VARCHAR(500) NULL,
     logo_alt_text VARCHAR(255) NULL,
-    website_url VARCHAR(255) NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    website_url   VARCHAR(255) NULL,
+    created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT uk_companies_normalized_name UNIQUE (normalized_name),
     CONSTRAINT uk_companies_slug UNIQUE (slug),
     INDEX idx_companies_name (name)
@@ -49,20 +53,27 @@ EXECUTE stmt_idx;
 DEALLOCATE PREPARE stmt_idx;
 
 -- Backfill distinct companies from existing jobs
+-- All string expressions COLLATE utf8mb4_unicode_ci so they match the
+-- companies.normalized_name column collation exactly.
 INSERT IGNORE INTO companies (name, normalized_name, slug, logo_url, created_at, updated_at)
-SELECT 
-    MIN(TRIM(j.company))                                                                         AS name,
-    LOWER(MIN(TRIM(j.company)))                                                                  AS normalized_name,
-    LOWER(REPLACE(REPLACE(REPLACE(MIN(TRIM(j.company)), ' ', '-'), '.', ''), ',', ''))          AS slug,
-    MAX(j.company_logo)                                                                          AS logo_url,
+SELECT
+    MIN(TRIM(j.company))                                                                          AS name,
+    LOWER(MIN(TRIM(j.company))) COLLATE utf8mb4_unicode_ci                                        AS normalized_name,
+    LOWER(REPLACE(REPLACE(REPLACE(MIN(TRIM(j.company)), ' ', '-'), '.', ''), ',', ''))
+        COLLATE utf8mb4_unicode_ci                                                                AS slug,
+    MAX(j.company_logo)                                                                           AS logo_url,
     NOW(),
     NOW()
 FROM jobs j
 WHERE j.company IS NOT NULL AND TRIM(j.company) != ''
-GROUP BY LOWER(TRIM(j.company));
+GROUP BY LOWER(TRIM(j.company)) COLLATE utf8mb4_unicode_ci;
 
 -- Backfill company_id foreign reference on existing jobs
+-- Force both sides of the join predicate to utf8mb4_unicode_ci so MySQL
+-- never raises "Illegal mix of collations" regardless of jobs.company charset.
 UPDATE jobs j
-JOIN companies c ON LOWER(TRIM(j.company)) = c.normalized_name
+JOIN companies c
+  ON LOWER(TRIM(j.company)) COLLATE utf8mb4_unicode_ci = c.normalized_name
 SET j.company_id = c.id
 WHERE j.company_id IS NULL;
+
