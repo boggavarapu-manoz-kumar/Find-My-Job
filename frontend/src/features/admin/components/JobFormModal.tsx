@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Search, Check, Sparkles } from 'lucide-react';
 import type { Job, EmploymentType, WorkMode, ExperienceLevel } from '../../../types/job.types';
@@ -237,11 +238,14 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
     if (minSalary !== null && minSalary < 0) {
       errs.salaryMin = 'Minimum salary cannot be negative';
     }
-    if (maxSalary !== null && maxSalary < 0) {
-      errs.salaryMax = 'Maximum salary cannot be negative';
-    }
     if (minSalary !== null && maxSalary !== null && maxSalary < minSalary) {
       errs.salaryMax = 'Maximum salary cannot be less than minimum salary';
+    }
+    if (formData.applicationDeadline) {
+      const today = new Date().toISOString().split('T')[0];
+      if (formData.applicationDeadline < today) {
+        errs.applicationDeadline = 'Application deadline must be today or in the future';
+      }
     }
 
     setErrors(errs);
@@ -297,7 +301,20 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
       await onSubmit(payload);
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Operation failed';
+      let msg = 'Operation failed';
+      if (axios.isAxiosError(err) && err.response?.data) {
+        const data = err.response.data as { message?: string; errors?: Record<string, string> };
+        if (data.errors && typeof data.errors === 'object') {
+          // Map backend field errors directly to form inputs
+          setErrors((prev) => ({ ...prev, ...data.errors }));
+          const firstFieldMessage = Object.values(data.errors)[0];
+          msg = firstFieldMessage || data.message || 'Validation failed for one or more fields.';
+        } else if (data.message) {
+          msg = data.message;
+        }
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
       setServerError(msg);
     } finally {
       setIsSubmitting(false);
