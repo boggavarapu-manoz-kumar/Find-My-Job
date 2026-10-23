@@ -202,10 +202,19 @@ export const JobDetailPage: React.FC = () => {
     // Open employer portal in new tab
     window.open(job.applicationUrl, '_blank', 'noopener,noreferrer');
 
-    // If user is logged in as candidate and has not already applied, prime the confirmation prompt
-    if (isAuthenticated && user?.role === 'ROLE_CANDIDATE' && !isApplied) {
+    // If user is logged in and has not already applied, prime the confirmation prompt
+    if (isAuthenticated && !isApplied) {
       setHasClickedApply(true);
-      sessionStorage.setItem(`pending_apply_${job.id}`, 'true');
+      try {
+        sessionStorage.setItem(`pending_apply_${job.id}`, 'true');
+      } catch {
+        // storage fallback
+      }
+
+      // Proactively trigger the modal after short delay in case browser doesn't fire focus/visibility
+      setTimeout(() => {
+        setIsConfirmModalOpen(true);
+      }, 1200);
     }
   };
 
@@ -214,8 +223,14 @@ export const JobDetailPage: React.FC = () => {
     if (!job || !isAuthenticated || isApplied) return;
 
     const checkReturn = () => {
-      const isPending = hasClickedApply || sessionStorage.getItem(`pending_apply_${job.id}`) === 'true';
-      if (isPending && !isApplied && document.visibilityState === 'visible') {
+      let isPending = hasClickedApply;
+      try {
+        if (!isPending) {
+          isPending = sessionStorage.getItem(`pending_apply_${job.id}`) === 'true';
+        }
+      } catch {}
+
+      if (isPending && !isApplied) {
         setIsConfirmModalOpen(true);
       }
     };
