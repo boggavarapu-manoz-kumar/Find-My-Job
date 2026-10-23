@@ -3,24 +3,48 @@ spring:
     name: job-platform-backend
   profiles:
     active: dev
+
+  # ─── Caffeine in-memory cache with per-cache TTL ─────────────────────────────
   cache:
-    type: simple
+    type: caffeine
     cache-names:
-      - publicJobs
-      - jobsBySlug
-      - featuredJobs
-      - relatedJobs
-      - categoryCounts
-      - companiesSearch
+      - publicJobs       # paginated job lists — 60 s TTL
+      - jobsBySlug       # individual job detail — 5 min TTL
+      - featuredJobs     # landing page featured — 5 min TTL
+      - relatedJobs      # related jobs per slug — 5 min TTL
+      - categoryCounts   # category aggregation — 10 min TTL
+      - companiesSearch  # company autocomplete — 2 min TTL
+    caffeine:
+      spec: maximumSize=2000,expireAfterWrite=60s
+
+  # ─── JPA / Hibernate — minimal round-trips ───────────────────────────────────
+  jpa:
+    open-in-view: false            # never hold a DB connection for the HTTP thread
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 30           # batch inserts/updates
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false # OFF in prod — no overhead
+
+  # ─── Flyway ──────────────────────────────────────────────────────────────────
   flyway:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
 
+# ─── Embedded Tomcat thread pool ─────────────────────────────────────────────
 server:
   port: ${PORT:8080}
   servlet:
     context-path: /
+  tomcat:
+    threads:
+      max: 50          # free tier has 1 shared vCPU — cap threads to avoid thrashing
+      min-spare: 5
+    connection-timeout: 20000
+    accept-count: 100
 
 management:
   endpoints:

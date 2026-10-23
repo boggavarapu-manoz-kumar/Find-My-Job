@@ -204,46 +204,33 @@ export const LandingPage: React.FC = () => {
 
   const categories = jobService.getCategories();
 
-  // Fetch featured jobs
-  const loadFeatured = useCallback((signal?: AbortSignal) => {
+  // ── Single coordinated prefetch ─ fires featured + latest + categories in parallel
+  const loadLandingData = useCallback((signal?: AbortSignal) => {
     setIsLoadingFeatured(true);
-    setFeaturedError(false);
-
-    jobService
-      .getFeaturedJobs(signal)
-      .then((jobs) => setFeaturedJobs(jobs.slice(0, 4)))
-      .catch((err) => {
-        if (!err?.message?.includes('cancel')) {
-          setFeaturedError(true);
-        }
-      })
-      .finally(() => setIsLoadingFeatured(false));
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    loadFeatured(controller.signal);
-    return () => controller.abort();
-  }, [loadFeatured]);
-
-  // Fetch latest jobs
-  useEffect(() => {
-    const controller = new AbortController();
     setIsLoadingLatest(true);
+    setFeaturedError(false);
     setLatestError(false);
 
-    jobService
-      .getLatestJobs({ sort: 'publishedAt,desc', size: 6 }, controller.signal)
+    // Fire all three requests concurrently — each resolves independently
+    jobService.getFeaturedJobs(signal)
+      .then((jobs) => setFeaturedJobs(jobs.slice(0, 4)))
+      .catch((err) => { if (!err?.message?.includes('cancel')) setFeaturedError(true); })
+      .finally(() => setIsLoadingFeatured(false));
+
+    jobService.getLatestJobs({ sort: 'publishedAt,desc', size: 6 }, signal)
       .then((page) => setLatestJobs(page.content))
-      .catch((err) => {
-        if (!err?.message?.includes('cancel')) {
-          setLatestError(true);
-        }
-      })
+      .catch((err) => { if (!err?.message?.includes('cancel')) setLatestError(true); })
       .finally(() => setIsLoadingLatest(false));
 
-    return () => controller.abort();
+    // Fire categories too to warm the cache for CategoryPage
+    jobService.getCategoryCounts(signal).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadLandingData(controller.signal);
+    return () => controller.abort();
+  }, [loadLandingData]);
 
   const animProps = shouldReduceMotion
     ? {}
@@ -377,7 +364,7 @@ export const LandingPage: React.FC = () => {
             <div className="py-10 text-center text-sm text-ink-400">
               Could not load featured listings.{' '}
               <button
-                onClick={() => loadFeatured()}
+                onClick={() => loadLandingData()}
                 className="text-brand-600 hover:underline font-medium"
               >
                 Retry

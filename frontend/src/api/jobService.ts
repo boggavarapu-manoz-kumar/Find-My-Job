@@ -10,9 +10,24 @@ export interface JobCategorySummary {
   description: string;
 }
 
-// High-performance client-side multi-tier cache (RAM + SessionStorage)
+// ─── Multi-tier client cache ──────────────────────────────────────────────────
+// Tier 1: JS heap — sub-microsecond reads, lives until tab close
+// Tier 2: sessionStorage — survives navigation, cleared on tab close
 const memoryCache = new Map<string, { timestamp: number; data: unknown }>();
-const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds memory TTL
+const PERSIST_TTL_MS = 5 * 60 * 1000; // 5 minutes session-storage TTL
+
+// In-flight deduplication — prevents N concurrent requests for the same key
+// (e.g. multiple components mounting simultaneously on landing page)
+const inFlight = new Map<string, Promise<unknown>>();
+
+function dedupe<T>(key: string, factory: () => Promise<T>): Promise<T> {
+  const existing = inFlight.get(key);
+  if (existing) return existing as Promise<T>;
+  const p = factory().finally(() => inFlight.delete(key));
+  inFlight.set(key, p);
+  return p;
+}
 
 function getPersisted<T>(key: string, maxAgeMs: number): T | null {
   try {
@@ -64,34 +79,32 @@ export const jobService = {
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       return cached.data as Job[];
     }
+    // Check session storage before hitting network
+    const persisted = getPersisted<Job[]>(cacheKey, PERSIST_TTL_MS);
+    if (persisted) {
+      memoryCache.set(cacheKey, { timestamp: Date.now(), data: persisted });
+      return persisted;
+    }
 
-    try {
-      const response = await apiClient.get<ApiResponse<Job[]>>('/public/jobs/featured', {
-        signal,
-      });
-
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+    return dedupe(cacheKey, async () => {
+      const response = await apiClient.get<ApiResponse<Job[]>>('/public/jobs/featured', { signal });
+      if (response.data?.success && Array.isArray(response.data.data)) {
         memoryCache.set(cacheKey, { timestamp: Date.now(), data: response.data.data });
-        // Pre-warm individual slug cache so clicking any job opens at 0ms even without router state
+        setPersisted(cacheKey, response.data.data);
+        // Pre-warm individual slug cache — clicking any job opens at 0ms
         response.data.data.forEach((j) => {
-          if (j?.slug) {
-            memoryCache.set(`job_slug_${j.slug}`, { timestamp: Date.now(), data: j });
-          }
+          if (j?.slug) memoryCache.set(`job_slug_${j.slug}`, { timestamp: Date.now(), data: j });
         });
         return response.data.data;
       }
       throw new Error('Invalid response structure received for featured positions.');
-    } catch (error) {
-      if (axios.isCancel(error)) {
-        throw error;
-      }
+    }).catch((error) => {
+      if (axios.isCancel(error)) throw error;
       const axiosErr = error as AxiosError<ApiResponse<unknown>>;
-      const message =
-        axiosErr.response?.data?.message ||
-        axiosErr.message ||
-        'Unable to retrieve featured job opportunities from the server.';
-      throw new Error(message);
-    }
+      throw new Error(
+        axiosErr.response?.data?.message || axiosErr.message || 'Unable to retrieve featured positions.'
+      );
+    });
   },
 
   /**
@@ -129,12 +142,13 @@ export const jobService = {
     if (cached && Date.now() - cached.timestamp < 30000) {
       return cached.data as PaginatedResponse<Job>;
     }
-    const persisted = getPersisted<PaginatedResponse<Job>>(cacheKey, 60000);
+    const persisted = getPersisted<PaginatedResponse<Job>>(cacheKey, PERSIST_TTL_MS);
     if (persisted) {
       memoryCache.set(cacheKey, { timestamp: Date.now(), data: persisted });
       return persisted;
     }
 
+    return dedupe(cacheKey, async () => {
     try {
       const queryParams: Record<string, unknown> = {};
 
@@ -197,6 +211,21 @@ export const jobService = {
         'Unable to retrieve job opportunities from the server.';
       throw new Error(message);
     }
+    }); // end dedupe
+  },
+
+  /**
+   * Prefetch all data needed for the landing page in parallel — one call per
+   * required dataset, all fired concurrently via Promise.all.
+   * Results are written into both memory and session-storage caches so
+   * subsequent renders are 0ms (pure cache reads).
+   */
+  async prefetchLandingPage(signal?: AbortSignal): Promise<void> {
+    await Promise.allSettled([
+      this.getFeaturedJobs(signal),
+      this.getLatestJobs({ sort: 'publishedAt,desc', size: 6 }, signal),
+      this.getCategoryCounts(signal),
+    ]);
   },
 
   /**
