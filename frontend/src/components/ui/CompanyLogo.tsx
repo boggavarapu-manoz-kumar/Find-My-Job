@@ -11,11 +11,11 @@ export interface CompanyLogoProps {
 }
 
 const SIZE_MAP: Record<CompanyLogoSize, { px: number; textClass: string; containerClass: string }> = {
-  xs: { px: 20, textClass: 'text-[10px]', containerClass: 'w-5 h-5 rounded' },
-  sm: { px: 28, textClass: 'text-xs', containerClass: 'w-7 h-7 rounded-md' },
-  md: { px: 40, textClass: 'text-sm', containerClass: 'w-10 h-10 rounded-lg' },
-  lg: { px: 56, textClass: 'text-lg', containerClass: 'w-14 h-14 rounded-xl' },
-  xl: { px: 72, textClass: 'text-2xl', containerClass: 'w-[72px] h-[72px] rounded-2xl' },
+  xs: { px: 28, textClass: 'text-xs', containerClass: 'w-7 h-7 rounded-md' },
+  sm: { px: 44, textClass: 'text-sm font-semibold', containerClass: 'w-11 h-11 rounded-xl' },
+  md: { px: 56, textClass: 'text-base font-bold', containerClass: 'w-14 h-14 rounded-2xl' },
+  lg: { px: 76, textClass: 'text-2xl font-bold', containerClass: 'w-[76px] h-[76px] rounded-2xl' },
+  xl: { px: 96, textClass: 'text-3xl font-bold', containerClass: 'w-24 h-24 rounded-3xl' },
 };
 
 // Deterministic pleasing palette for monogram backgrounds
@@ -76,7 +76,7 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({
   if (optimizedSrc) {
     return (
       <div
-        className={`relative inline-flex items-center justify-center shrink-0 overflow-hidden bg-white border border-canvas-border shadow-xs ${sizeConfig.containerClass} ${className}`}
+        className={`relative inline-flex items-center justify-center shrink-0 overflow-hidden bg-white dark:bg-canvas-card border border-canvas-border/80 shadow-xs hover:shadow-sm transition-shadow ${sizeConfig.containerClass} ${className}`}
         style={{ width: `${sizeConfig.px}px`, height: `${sizeConfig.px}px` }}
       >
         <img
@@ -86,7 +86,7 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({
           decoding="async"
           width={sizeConfig.px}
           height={sizeConfig.px}
-          className="w-full h-full object-contain p-1 select-none"
+          className="w-full h-full object-contain p-1.5 select-none transition-transform duration-200 group-hover:scale-105"
           onError={() => setHasError(true)}
         />
       </div>

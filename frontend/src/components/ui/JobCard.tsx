@@ -55,27 +55,30 @@ export const JobCard: React.FC<JobCardProps> = ({
       className={`group flex flex-col h-full p-5 bg-canvas-card border border-canvas-border rounded-card hover:border-brand-400/70 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 transition-all duration-200 cursor-pointer ${className}`}
     >
       {/* ── Header row: company · category · entry-level badge · timestamp ── */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2 flex-wrap min-w-0">
+      <div className="flex items-start justify-between gap-3 mb-3.5">
+        <div className="flex items-center gap-3 min-w-0">
           {/* Company logo or monogram */}
           <CompanyLogo
             companyName={job.company}
             logoUrl={job.companyLogo}
-            size="sm"
+            size="md"
+            className="shadow-xs ring-1 ring-black/5"
           />
           <div className="flex flex-col min-w-0">
-            <span className="text-xs font-bold text-ink-800 uppercase tracking-wide leading-none truncate max-w-[160px]">
+            <span className="text-xs font-bold text-ink-900 uppercase tracking-wide truncate max-w-[180px]">
               {job.company}
             </span>
-            <span className="text-[11px] text-ink-400 leading-none mt-0.5 truncate max-w-[160px]">
+            <span className="text-[12px] font-medium text-ink-500 truncate max-w-[180px]">
               {job.category}
             </span>
+            {job.fresherEligible && (
+              <span className="inline-block mt-0.5">
+                <Badge variant="success" size="sm">
+                  Entry-level
+                </Badge>
+              </span>
+            )}
           </div>
-          {job.fresherEligible && (
-            <Badge variant="success" size="sm">
-              Entry-level
-            </Badge>
-          )}
         </div>
 
         {/* Timestamp — always pinned to the right, never wraps */}

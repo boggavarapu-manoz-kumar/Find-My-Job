@@ -312,19 +312,19 @@ export const JobDetailPage: React.FC = () => {
       {/* Main Job Hero Header Card */}
       <div className="p-6 sm:p-8 bg-canvas-card border border-canvas-border rounded-card shadow-card space-y-6">
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="flex items-start gap-4 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
+            <div className="flex items-start gap-4 sm:gap-5 min-w-0">
               <CompanyLogo
                 companyName={job.company}
                 logoUrl={job.companyLogo}
-                size="lg"
-                className="mt-0.5 border-brand-100 shadow-sm"
+                size="xl"
+                className="mt-0.5 border-brand-200/80 shadow-md ring-4 ring-brand-50/50"
               />
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-ink-500 uppercase tracking-wider block">
+            <div className="min-w-0 pt-0.5">
+              <span className="text-xs sm:text-sm font-bold text-ink-500 uppercase tracking-wider block">
                 {job.company}
               </span>
-              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-ink-900 leading-tight mt-1">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-ink-900 leading-tight mt-1">
                 {job.title}
               </h1>
             </div>
