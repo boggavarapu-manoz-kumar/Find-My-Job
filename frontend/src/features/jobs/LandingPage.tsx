@@ -145,13 +145,13 @@ const HowStep: React.FC<{
 // ─── Category card ────────────────────────────────────────────────────────────
 const CategoryCard: React.FC<{
   name: string;
-  key: string;
+  categoryKey: string;
   description: string;
-}> = ({ name, key: catKey, description }) => {
+}> = ({ name, categoryKey, description }) => {
   const navigate = useNavigate();
   return (
     <motion.button
-      onClick={() => navigate(`/jobs?category=${encodeURIComponent(catKey)}`)}
+      onClick={() => navigate(`/jobs?category=${encodeURIComponent(categoryKey)}`)}
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.98 }}
       className="group flex flex-col justify-between w-full h-full text-left p-5 sm:p-6 bg-canvas-card border border-canvas-border rounded-xl hover:border-brand-500 hover:shadow-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
@@ -434,7 +434,7 @@ export const LandingPage: React.FC = () => {
           >
             {categories.slice(0, 6).map((cat) => (
               <motion.div key={cat.key} variants={staggerItem} className="flex">
-                <CategoryCard {...cat} />
+                <CategoryCard name={cat.name} categoryKey={cat.key} description={cat.description} />
               </motion.div>
             ))}
           </motion.div>
