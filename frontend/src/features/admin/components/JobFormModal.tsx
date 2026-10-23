@@ -41,13 +41,19 @@ interface JobFormModalProps {
   mode: 'create' | 'edit';
 }
 
-const CATEGORIES = [
+export const CATEGORIES = [
   'Engineering',
   'Design',
   'Product & Marketing',
   'DevOps & Cloud',
   'Data Science & AI',
   'Finance & Operations',
+  'Human Resources',
+  'Hackathons',
+  'Apprenticeships',
+  'Events & Conferences',
+  'Meetups & Networking',
+  'Other',
 ];
 
 export const JobFormModal: React.FC<JobFormModalProps> = ({

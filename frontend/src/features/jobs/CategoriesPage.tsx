@@ -15,6 +15,11 @@ import {
   Search,
   ArrowRight,
   RefreshCw,
+  Users,
+  Trophy,
+  GraduationCap,
+  CalendarDays,
+  MessagesSquare,
 } from 'lucide-react';
 import axios from 'axios';
 import { PageContainer } from '../../components/ui/PageContainer';
@@ -61,6 +66,36 @@ const CATEGORY_DEFS: CategoryDef[] = [
     key: 'Product & Marketing',
     description: 'Product strategy, growth, developer relations, and GTM.',
     icon: <TrendingUp className="w-5 h-5" />,
+  },
+  {
+    name: 'Human Resources (HR)',
+    key: 'Human Resources',
+    description: 'People operations, tech talent recruitment, organizational development, and culture.',
+    icon: <Users className="w-5 h-5" />,
+  },
+  {
+    name: 'Hackathons & Contests',
+    key: 'Hackathons',
+    description: 'Developer hackathons, coding contests, bug bounties, and build competitions.',
+    icon: <Trophy className="w-5 h-5" />,
+  },
+  {
+    name: 'Apprenticeships & Internships',
+    key: 'Apprenticeships',
+    description: 'Early career apprenticeships, fast-track internships, and trainee fellowships.',
+    icon: <GraduationCap className="w-5 h-5" />,
+  },
+  {
+    name: 'Events & Conferences',
+    key: 'Events & Conferences',
+    description: 'Global tech conferences, developer summits, product keynotes, and tech fairs.',
+    icon: <CalendarDays className="w-5 h-5" />,
+  },
+  {
+    name: 'Meetups & Networking',
+    key: 'Meetups & Networking',
+    description: 'Local developer meetups, founder circles, technical workshops, and community events.',
+    icon: <MessagesSquare className="w-5 h-5" />,
   },
   {
     name: 'Analytics & BI',

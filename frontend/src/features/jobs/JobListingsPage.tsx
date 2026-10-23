@@ -467,6 +467,13 @@ export const JobListingsPage: React.FC = () => {
                 { value: 'DevOps & Cloud', label: 'DevOps & Cloud' },
                 { value: 'Data Science & AI', label: 'Data Science & AI' },
                 { value: 'Product & Marketing', label: 'Product & Marketing' },
+                { value: 'Human Resources', label: 'Human Resources (HR)' },
+                { value: 'Hackathons', label: 'Hackathons & Contests' },
+                { value: 'Apprenticeships', label: 'Apprenticeships & Internships' },
+                { value: 'Events & Conferences', label: 'Events & Conferences' },
+                { value: 'Meetups & Networking', label: 'Meetups & Networking' },
+                { value: 'Finance & Operations', label: 'Finance & Operations' },
+                { value: 'Other', label: 'Other Disciplines' },
               ]}
               className="w-full"
             />

@@ -300,18 +300,24 @@ export const JobDetailPage: React.FC = () => {
       return;
     }
 
+    if (isSaving) return; // Prevent double click
+
+    // 0ms Optimistic UI update: Flip immediately before network call
+    const previousSavedState = isSaved;
+    const nextSavedState = !previousSavedState;
+    setIsSaved(nextSavedState);
     setIsSaving(true);
+    setToastMessage(nextSavedState ? 'Job saved to your candidate profile' : 'Job removed from saved bookmarks');
+
     try {
-      if (isSaved) {
+      if (previousSavedState) {
         await candidateService.unsaveJob(job.id);
-        setIsSaved(false);
-        setToastMessage('Job removed from saved bookmarks');
       } else {
         await candidateService.saveJob(job.id);
-        setIsSaved(true);
-        setToastMessage('Job saved to your candidate profile');
       }
     } catch (err: unknown) {
+      // Rollback only on actual failure
+      setIsSaved(previousSavedState);
       setToastMessage(err instanceof Error ? err.message : 'Could not update saved status');
     } finally {
       setIsSaving(false);

@@ -327,6 +327,11 @@ export const jobService = {
       { name: 'DevOps & Cloud', key: 'DevOps & Cloud', description: 'Site reliability, Kubernetes orchestration and CI/CD pipelines' },
       { name: 'Data Science & AI', key: 'Data Science & AI', description: 'Applied machine learning, deep neural models and research' },
       { name: 'Product Management', key: 'Product & Marketing', description: 'Technical product strategy, developer relations and growth' },
+      { name: 'Human Resources (HR)', key: 'Human Resources', description: 'Talent acquisition, organizational development and people operations' },
+      { name: 'Hackathons & Contests', key: 'Hackathons', description: 'Developer hackathons, coding challenges and build competitions' },
+      { name: 'Apprenticeships & Internships', key: 'Apprenticeships', description: 'Early-career trainee fellowships and graduate internships' },
+      { name: 'Events & Conferences', key: 'Events & Conferences', description: 'Tech summits, engineering symposiums and industry keynotes' },
+      { name: 'Meetups & Networking', key: 'Meetups & Networking', description: 'Community developer meetups and founder networking circles' },
     ];
   },
 };

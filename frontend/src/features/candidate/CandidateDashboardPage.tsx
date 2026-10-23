@@ -66,11 +66,14 @@ export const CandidateDashboardPage: React.FC = () => {
   const handleUnsave = async (jobId: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setUnsavingId(jobId);
+    const previous = [...savedJobs];
+    // 0ms instant optimistic removal
+    setSavedJobs((prev) => prev.filter((j) => j.jobId !== jobId));
     try {
       await candidateService.unsaveJob(jobId);
-      setSavedJobs((prev) => prev.filter((j) => j.jobId !== jobId));
     } catch {
-      // Revert or show toast on failure
+      // Revert if API fails
+      setSavedJobs(previous);
     } finally {
       setUnsavingId(null);
     }
