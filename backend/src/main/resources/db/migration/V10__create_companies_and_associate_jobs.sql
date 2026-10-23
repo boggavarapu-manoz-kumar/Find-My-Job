@@ -51,9 +51,9 @@ DEALLOCATE PREPARE stmt_idx;
 -- Backfill distinct companies from existing jobs
 INSERT IGNORE INTO companies (name, normalized_name, slug, logo_url, created_at, updated_at)
 SELECT 
-    MIN(j.company) AS name,
+    MIN(TRIM(j.company)) AS name,
     LOWER(TRIM(j.company)) AS normalized_name,
-    LOWER(REPLACE(REPLACE(REPLACE(TRIM(j.company), ' ', '-'), '.', ''), ',', '')) AS slug,
+    LOWER(REPLACE(REPLACE(REPLACE(MIN(TRIM(j.company)), ' ', '-'), '.', ''), ',', '')) AS slug,
     MAX(j.company_logo) AS logo_url,
     NOW(),
     NOW()
