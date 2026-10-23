@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { MapPin, Briefcase, DollarSign, ArrowUpRight, Clock, Building2 } from 'lucide-react';
 import { Badge, Tag } from '../ui/Badge';
+import { CompanyLogo } from '../ui/CompanyLogo';
 import { cardInteractiveHover } from '../../utils/motion';
 import { formatPostedDate } from '../../utils/dateUtils';
 import type { Job } from '../../types/job.types';
@@ -56,10 +57,12 @@ export const JobCard: React.FC<JobCardProps> = ({
       {/* ── Header row: company · category · entry-level badge · timestamp ── */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2 flex-wrap min-w-0">
-          {/* Company logo placeholder / icon */}
-          <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-brand-50 border border-brand-100 shrink-0">
-            <Building2 className="w-3.5 h-3.5 text-brand-500" />
-          </span>
+          {/* Company logo or monogram */}
+          <CompanyLogo
+            companyName={job.company}
+            logoUrl={job.companyLogo}
+            size="sm"
+          />
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-bold text-ink-800 uppercase tracking-wide leading-none truncate max-w-[160px]">
               {job.company}

@@ -21,6 +21,7 @@ import { PageContainer } from '../../components/ui/PageContainer';
 import { PrimaryButton, SecondaryButton } from '../../components/ui/Button';
 import { Badge, Tag } from '../../components/ui/Badge';
 import { JobCard } from '../../components/ui/JobCard';
+import { CompanyLogo } from '../../components/ui/CompanyLogo';
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton';
 import { Toast } from '../../components/ui/Toast';
 import { jobService } from '../../api/jobService';
@@ -310,27 +311,36 @@ export const JobDetailPage: React.FC = () => {
 
       {/* Main Job Hero Header Card */}
       <div className="p-6 sm:p-8 bg-canvas-card border border-canvas-border rounded-card shadow-card space-y-6">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-bold text-ink-500 uppercase tracking-wider">
-              {job.company}
-            </span>
-            <div className="flex items-center gap-2">
-              {job.fresherEligible ? (
-                <Badge variant="success" size="sm">
-                  <Sparkles className="w-3 h-3 mr-1 inline" />
-                  Fresher Eligible
-                </Badge>
-              ) : null}
-              <Badge variant="neutral" size="sm">
-                {job.category}
-              </Badge>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="flex items-start gap-4 min-w-0">
+              <CompanyLogo
+                companyName={job.company}
+                logoUrl={job.companyLogo}
+                size="lg"
+                className="mt-0.5 border-brand-100 shadow-sm"
+              />
+            <div className="min-w-0">
+              <span className="text-xs font-bold text-ink-500 uppercase tracking-wider block">
+                {job.company}
+              </span>
+              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-ink-900 leading-tight mt-1">
+                {job.title}
+              </h1>
             </div>
           </div>
-
-          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-ink-900 leading-tight">
-            {job.title}
-          </h1>
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+            {job.fresherEligible ? (
+              <Badge variant="success" size="sm">
+                <Sparkles className="w-3 h-3 mr-1 inline" />
+                Fresher Eligible
+              </Badge>
+            ) : null}
+            <Badge variant="neutral" size="sm">
+              {job.category}
+            </Badge>
+          </div>
+        </div>
 
           {/* Metadata badges strip */}
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-ink-600 pt-3 border-t border-canvas-border">

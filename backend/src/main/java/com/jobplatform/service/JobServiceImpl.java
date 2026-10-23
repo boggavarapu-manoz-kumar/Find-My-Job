@@ -21,9 +21,11 @@ import java.util.List;
 public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
+    private final CompanyService companyService;
 
-    public JobServiceImpl(JobRepository jobRepository) {
+    public JobServiceImpl(JobRepository jobRepository, CompanyService companyService) {
         this.jobRepository = jobRepository;
+        this.companyService = companyService;
     }
 
     @Override
@@ -157,6 +159,17 @@ public class JobServiceImpl implements JobService {
         );
 
         job.setCompanyLogo(request.getCompanyLogo());
+
+        // Associate with single-source-of-truth Company record and reuse logo if present
+        if (request.getCompany() != null && !request.getCompany().isBlank()) {
+            com.jobplatform.entity.Company company = companyService.findOrCreateCompanyEntity(
+                    request.getCompany(), request.getCompanyLogo(), null);
+            job.setCompanyRef(company);
+            if ((job.getCompanyLogo() == null || job.getCompanyLogo().isBlank()) && company.getLogoUrl() != null) {
+                job.setCompanyLogo(company.getLogoUrl());
+            }
+        }
+
         job.setFresherEligible(request.isFresherEligible());
         job.setSalaryMin(request.getSalaryMin());
         job.setSalaryMax(request.getSalaryMax());
@@ -191,6 +204,17 @@ public class JobServiceImpl implements JobService {
         job.setTitle(request.getTitle());
         job.setCompany(request.getCompany());
         job.setCompanyLogo(request.getCompanyLogo());
+
+        // Update company reference and auto-reuse existing logo if none provided
+        if (request.getCompany() != null && !request.getCompany().isBlank()) {
+            com.jobplatform.entity.Company company = companyService.findOrCreateCompanyEntity(
+                    request.getCompany(), request.getCompanyLogo(), null);
+            job.setCompanyRef(company);
+            if ((job.getCompanyLogo() == null || job.getCompanyLogo().isBlank()) && company.getLogoUrl() != null) {
+                job.setCompanyLogo(company.getLogoUrl());
+            }
+        }
+
         job.setCategory(request.getCategory());
         job.setEmploymentType(request.getEmploymentType());
         job.setWorkMode(request.getWorkMode());

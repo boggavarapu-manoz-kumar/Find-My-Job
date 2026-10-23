@@ -9,6 +9,7 @@ export interface Job {
   title: string;
   company: string;
   companyLogo?: string | null;
+  companyId?: number | null;
   category: string;
   employmentType: EmploymentType;
   workMode: WorkMode;

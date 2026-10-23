@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class JobResponseDTO {
 
     private Long id;
+    private Long companyId;
     private String slug;
     private String title;
     private String company;
@@ -42,10 +43,17 @@ public class JobResponseDTO {
         if (job == null) return null;
         JobResponseDTO dto = new JobResponseDTO();
         dto.setId(job.getId());
+        if (job.getCompanyRef() != null) {
+            dto.setCompanyId(job.getCompanyRef().getId());
+        }
         dto.setSlug(job.getSlug());
         dto.setTitle(job.getTitle());
         dto.setCompany(job.getCompany());
-        dto.setCompanyLogo(job.getCompanyLogo());
+        if (job.getCompanyLogo() != null && !job.getCompanyLogo().isBlank()) {
+            dto.setCompanyLogo(job.getCompanyLogo());
+        } else if (job.getCompanyRef() != null && job.getCompanyRef().getLogoUrl() != null) {
+            dto.setCompanyLogo(job.getCompanyRef().getLogoUrl());
+        }
         dto.setCategory(job.getCategory());
         dto.setEmploymentType(job.getEmploymentType());
         dto.setWorkMode(job.getWorkMode());
@@ -79,6 +87,14 @@ public class JobResponseDTO {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 
     public String getSlug() {

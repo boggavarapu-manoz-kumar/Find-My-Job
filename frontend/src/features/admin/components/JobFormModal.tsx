@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Building2, Search, Check, Sparkles } from 'lucide-react';
 import type { Job, EmploymentType, WorkMode, ExperienceLevel } from '../../../types/job.types';
 import { Button } from '../../../components/ui/Button';
+import { companyService, type CompanyResponse } from '../../../api/companyService';
+import { CompanyLogo } from '../../../components/ui/CompanyLogo';
+import { CompanyLogoUpload } from './CompanyLogoUpload';
 
 export interface JobFormData {
   title: string;
   company: string;
   companyLogo: string;
+  companyId?: number | null;
   category: string;
   employmentType: EmploymentType;
   workMode: WorkMode;
@@ -81,6 +86,46 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
+  // Company management & autocomplete state
+  const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
+  const [companySuggestions, setCompanySuggestions] = useState<CompanyResponse[]>([]);
+  const [isSearchingCompany, setIsSearchingCompany] = useState(false);
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+  const companyInputWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (companyInputWrapperRef.current && !companyInputWrapperRef.current.contains(e.target as Node)) {
+        setShowCompanyDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Debounced company search
+  useEffect(() => {
+    if (!formData.company || formData.company.trim().length < 2 || !showCompanyDropdown) {
+      setCompanySuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingCompany(true);
+      try {
+        const results = await companyService.searchCompanies(formData.company.trim(), 5);
+        setCompanySuggestions(results);
+      } catch {
+        setCompanySuggestions([]);
+      } finally {
+        setIsSearchingCompany(false);
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [formData.company, showCompanyDropdown]);
+
   // Populate data when editing
   useEffect(() => {
     if (initialData && mode === 'edit') {
@@ -88,6 +133,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
         title: initialData.title || '',
         company: initialData.company || '',
         companyLogo: initialData.companyLogo || '',
+        companyId: initialData.companyId || null,
         category: initialData.category || 'Engineering',
         employmentType: initialData.employmentType || 'FULL_TIME',
         workMode: initialData.workMode || 'REMOTE',
@@ -108,11 +154,13 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
         publishImmediately: initialData.status === 'PUBLISHED',
         featured: initialData.featured || false,
       });
+      setSelectedCompanyId(initialData.companyId || null);
     } else if (mode === 'create') {
       setFormData({
         title: '',
         company: '',
         companyLogo: '',
+        companyId: null,
         category: 'Engineering',
         employmentType: 'FULL_TIME',
         workMode: 'REMOTE',
@@ -133,9 +181,11 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
         publishImmediately: false,
         featured: false,
       });
+      setSelectedCompanyId(null);
     }
     setErrors({});
     setServerError(null);
+    setShowCompanyDropdown(false);
   }, [initialData, mode, isOpen]);
 
   if (!isOpen) return null;
@@ -171,8 +221,8 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
       errs.applicationUrl = 'Application URL must start with http:// or https://';
     }
 
-    if (formData.companyLogo.trim() && !/^https?:\/\/.+/i.test(formData.companyLogo.trim())) {
-      errs.companyLogo = 'Company logo must be a valid HTTP or HTTPS URL';
+    if (formData.companyLogo.trim() && !/^(https?:\/\/|blob:).+/i.test(formData.companyLogo.trim())) {
+      errs.companyLogo = 'Company logo must be a valid HTTP, HTTPS, or preview image URL';
     }
 
     const minSalary = formData.salaryMin ? Number(formData.salaryMin) : null;
@@ -223,6 +273,10 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
         applicationDeadline: formData.applicationDeadline ? formData.applicationDeadline : null,
         featured: formData.featured,
       };
+
+      if (selectedCompanyId) {
+        payload.companyId = selectedCompanyId;
+      }
 
       if (formData.salaryMin) payload.salaryMin = Number(formData.salaryMin);
       else payload.salaryMin = null;
@@ -301,18 +355,98 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                   {errors.title && <p className="text-[11px] text-rose-500 mt-0.5">{errors.title}</p>}
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-ink-700 mb-1">
-                    Company Name <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    placeholder="e.g. Stripe, Acme Corp"
-                    className="w-full px-3 py-2 bg-canvas-base border border-canvas-border rounded-lg text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  />
+                <div ref={companyInputWrapperRef} className="relative">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-medium text-ink-700">
+                      Company Name <span className="text-rose-500">*</span>
+                    </label>
+                    {selectedCompanyId ? (
+                      <span className="text-[10px] text-emerald-600 font-semibold inline-flex items-center gap-0.5">
+                        <Check className="w-3 h-3" /> Linked to verified company
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={formData.company}
+                      onChange={(e) => {
+                        setFormData({ ...formData, company: e.target.value });
+                        setSelectedCompanyId(null);
+                        setShowCompanyDropdown(true);
+                      }}
+                      onFocus={() => {
+                        if (formData.company.trim().length >= 2) {
+                          setShowCompanyDropdown(true);
+                        }
+                      }}
+                      placeholder="e.g. Stripe, Google, Acme Corp"
+                      className="w-full pl-9 pr-3 py-2 bg-canvas-base border border-canvas-border rounded-lg text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    />
+                    <Building2 className="w-4 h-4 text-ink-400 absolute left-3 top-2.5 pointer-events-none" />
+                  </div>
                   {errors.company && <p className="text-[11px] text-rose-500 mt-0.5">{errors.company}</p>}
+
+                  {/* Autocomplete Suggestions Dropdown */}
+                  <AnimatePresence>
+                    {showCompanyDropdown && (companySuggestions.length > 0 || isSearchingCompany) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute z-30 left-0 right-0 mt-1 bg-canvas-card border border-canvas-border rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto"
+                      >
+                        {isSearchingCompany && (
+                          <div className="px-3 py-2 text-xs text-ink-400">Searching directory...</div>
+                        )}
+                        {companySuggestions.map((comp) => (
+                          <button
+                            key={comp.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                company: comp.name,
+                                companyLogo: comp.logoUrl || prev.companyLogo,
+                              }));
+                              setSelectedCompanyId(comp.id);
+                              setShowCompanyDropdown(false);
+                            }}
+                            className="w-full flex items-center justify-between px-3 py-2 hover:bg-canvas-subtle transition-colors text-left border-b border-canvas-border/50 last:border-b-0 cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <CompanyLogo companyName={comp.name} logoUrl={comp.logoUrl} size="sm" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold text-ink-900 truncate">{comp.name}</p>
+                                {comp.websiteUrl && (
+                                  <p className="text-[10px] text-ink-400 truncate">{comp.websiteUrl}</p>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-medium text-brand-600 shrink-0 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-100">
+                              Select & Reuse Logo
+                            </span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Company Logo Management */}
+                <div className="sm:col-span-2 pt-1">
+                  <CompanyLogoUpload
+                    companyName={formData.company}
+                    companyId={selectedCompanyId}
+                    currentLogoUrl={formData.companyLogo}
+                    onLogoUpdated={(newLogoUrl) => {
+                      setFormData((prev) => ({ ...prev, companyLogo: newLogoUrl || '' }));
+                    }}
+                  />
+                  {errors.companyLogo && (
+                    <p className="text-[11px] text-rose-500 mt-1">{errors.companyLogo}</p>
+                  )}
                 </div>
 
                 <div>

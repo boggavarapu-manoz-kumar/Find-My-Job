@@ -65,4 +65,11 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
      */
     @Query("SELECT j.category, COUNT(j) FROM Job j WHERE j.status = :status GROUP BY j.category")
     List<Object[]> countJobsGroupedByCategory(@Param("status") JobStatus status);
+
+    /**
+     * Synchronizes company logo across all jobs belonging to the company.
+     */
+    @Modifying
+    @Query("UPDATE Job j SET j.companyLogo = :logoUrl WHERE (j.companyRef IS NOT NULL AND j.companyRef.id = :companyId) OR LOWER(TRIM(j.company)) = :normalizedName")
+    void updateCompanyLogoForCompany(@Param("companyId") Long companyId, @Param("normalizedName") String normalizedName, @Param("logoUrl") String logoUrl);
 }

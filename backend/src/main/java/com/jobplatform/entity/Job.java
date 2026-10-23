@@ -24,7 +24,8 @@ import java.time.LocalDateTime;
         @Index(name = "idx_jobs_status_type_published", columnList = "status, employment_type, published_at"),
         @Index(name = "idx_jobs_status_exp_published", columnList = "status, experience_level, published_at"),
         @Index(name = "idx_jobs_status_fresher_published", columnList = "status, fresher_eligible, published_at"),
-        @Index(name = "idx_jobs_status_category_id", columnList = "status, category, id, published_at")
+        @Index(name = "idx_jobs_status_category_id", columnList = "status, category, id, published_at"),
+        @Index(name = "idx_jobs_company_id", columnList = "company_id")
     },
     uniqueConstraints = {
         @UniqueConstraint(name = "uk_jobs_slug", columnNames = {"slug"})
@@ -47,6 +48,10 @@ public class Job {
 
     @Column(name = "company_logo", length = 500)
     private String companyLogo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company companyRef;
 
     @Column(nullable = false, length = 80)
     private String category;
@@ -403,5 +408,13 @@ public class Job {
 
     public void setPublishedAt(LocalDateTime publishedAt) {
         this.publishedAt = publishedAt;
+    }
+
+    public Company getCompanyRef() {
+        return companyRef;
+    }
+
+    public void setCompanyRef(Company companyRef) {
+        this.companyRef = companyRef;
     }
 }
