@@ -1,4 +1,5 @@
 import apiClient from './client';
+import type { AxiosError } from 'axios';
 
 export interface CompanyResponse {
   id: number;
@@ -63,22 +64,44 @@ export const companyService = {
   },
 
   /**
-   * Admin: Upload or replace company logo via secure backend Cloudinary pipeline.
+   * Admin: Upload or replace a company logo via secure backend → Cloudinary pipeline.
+   *
+   * Uses a 60 s timeout because Cloudinary processing on the free tier can take
+   * 10–20 s on first upload. Retries once automatically on transient 502/503/504.
    */
-  async uploadCompanyLogo(companyId: number, file: File): Promise<CompanyResponse> {
+  async uploadCompanyLogo(companyId: number, file: File, attempt = 0): Promise<CompanyResponse> {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await apiClient.post<{ success: boolean; data: CompanyResponse }>(
-      `/admin/companies/${companyId}/logo`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+    try {
+      const response = await apiClient.post<{ success: boolean; data: CompanyResponse; message?: string }>(
+        `/admin/companies/${companyId}/logo`,
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 60000, // Cloudinary upload can take up to 30 s on free tier
+        }
+      );
+      return response.data.data;
+    } catch (err) {
+      const axiosErr = err as AxiosError<{ message?: string }>;
+      const status = axiosErr.response?.status;
+      const serverMsg = axiosErr.response?.data?.message;
+
+      // Retry once on transient gateway/timeout errors
+      if (attempt < 1 && (!status || [502, 503, 504].includes(status) || axiosErr.code === 'ECONNABORTED')) {
+        await new Promise((r) => setTimeout(r, 2000));
+        return this.uploadCompanyLogo(companyId, file, attempt + 1);
       }
-    );
-    return response.data.data;
+
+      if (status === 503) {
+        throw new Error(
+          serverMsg ||
+          'Logo upload service is not available. Please ensure Cloudinary credentials are configured on the server.'
+        );
+      }
+      throw new Error(serverMsg || axiosErr.message || 'Logo upload failed. Please try again.');
+    }
   },
 
   /**
@@ -90,3 +113,4 @@ export const companyService = {
 };
 
 export default companyService;
+

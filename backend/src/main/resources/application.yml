@@ -4,6 +4,14 @@ spring:
   profiles:
     active: dev
 
+  # ─── Multipart upload limits (logo files up to 5 MB) ───────────────────────
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 10MB
+      file-size-threshold: 256KB   # buffer below this size, spool to disk above
+
   # ─── Caffeine in-memory cache with per-cache TTL ─────────────────────────────
   cache:
     type: caffeine

@@ -38,7 +38,8 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     public CloudinaryUploadResult uploadLogo(MultipartFile file, String companySlug) {
         if (!properties.isConfigured()) {
             throw new ApiException(
-                    "Cloudinary image service is not configured. Please supply CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in the environment.",
+                    "Cloudinary image service is not configured on this server. " +
+                    "Please supply CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.",
                     HttpStatus.SERVICE_UNAVAILABLE
             );
         }
@@ -48,32 +49,57 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         String cleanSlug = (companySlug != null && !companySlug.isBlank()) ? companySlug : "logo";
         String uniquePublicId = properties.getFolder() + "/" + cleanSlug + "_" + UUID.randomUUID().toString().substring(0, 8);
 
+        byte[] fileBytes;
         try {
-            byte[] fileBytes = file.getBytes();
+            fileBytes = file.getBytes();
+        } catch (IOException ex) {
+            throw new ApiException("Failed to read uploaded file: " + ex.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+
+        // Attempt upload with 1 automatic retry for transient Cloudinary 503/network errors
+        return doUploadWithRetry(fileBytes, uniquePublicId, cleanSlug, 0);
+    }
+
+    private CloudinaryUploadResult doUploadWithRetry(byte[] fileBytes, String uniquePublicId, String slug, int attempt) {
+        try {
             Map<?, ?> uploadResult = cloudinary.uploader().upload(fileBytes, ObjectUtils.asMap(
-                    "public_id", uniquePublicId,
-                    "overwrite", true,
+                    "public_id",     uniquePublicId,
+                    "overwrite",     true,
                     "resource_type", "image",
-                    "tags", "company-logo"
+                    "tags",          "company-logo",
+                    // Pre-generate optimised 200x200 variant at upload time — first CDN hit is instant
+                    "eager",         "c_fit,w_200,h_200,q_auto,f_auto",
+                    "eager_async",   false,
+                    "quality",       "auto",
+                    "fetch_format",  "auto",
+                    "timeout",       30000   // 30 s — free Cloudinary can be slow
             ));
 
-            String publicId = (String) uploadResult.get("public_id");
-            String assetId = (String) uploadResult.get("asset_id");
+            String publicId  = (String) uploadResult.get("public_id");
+            String assetId   = (String) uploadResult.get("asset_id");
             String secureUrl = (String) uploadResult.get("secure_url");
-            String format = (String) uploadResult.get("format");
-            int width = uploadResult.get("width") instanceof Number ? ((Number) uploadResult.get("width")).intValue() : 0;
-            int height = uploadResult.get("height") instanceof Number ? ((Number) uploadResult.get("height")).intValue() : 0;
-            long bytes = uploadResult.get("bytes") instanceof Number ? ((Number) uploadResult.get("bytes")).longValue() : file.getSize();
+            String format    = (String) uploadResult.get("format");
+            int    width     = uploadResult.get("width")  instanceof Number n ? n.intValue()  : 0;
+            int    height    = uploadResult.get("height") instanceof Number n ? n.intValue()  : 0;
+            long   bytes     = uploadResult.get("bytes")  instanceof Number n ? n.longValue() : fileBytes.length;
 
-            log.info("Successfully uploaded company logo to Cloudinary: publicId={}, url={}", publicId, secureUrl);
+            log.info("Cloudinary logo uploaded: publicId={}, url={}, format={}, {}x{}", publicId, secureUrl, format, width, height);
             return new CloudinaryUploadResult(publicId, assetId, secureUrl, format, width, height, bytes);
 
-        } catch (IOException ex) {
-            log.error("Cloudinary upload I/O failure for slug {}: {}", cleanSlug, ex.getMessage());
-            throw new ApiException("Failed to upload logo image to CDN storage: " + ex.getMessage(), HttpStatus.BAD_GATEWAY);
         } catch (Exception ex) {
-            log.error("Cloudinary upload unexpected failure for slug {}: {}", cleanSlug, ex.getMessage());
-            throw new ApiException("Logo processing error: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            String msg = extractCloudinaryMessage(ex);
+            boolean isTransient = msg.contains("503") || msg.contains("502") || msg.contains("timeout")
+                    || msg.contains("connection") || msg.contains("network");
+
+            if (isTransient && attempt < 1) {
+                log.warn("Transient Cloudinary error (attempt {}), retrying in 2 s: {}", attempt + 1, msg);
+                try { Thread.sleep(2000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                return doUploadWithRetry(fileBytes, uniquePublicId, slug, attempt + 1);
+            }
+
+            log.error("Cloudinary upload failed for slug '{}' after {} attempt(s): {}", slug, attempt + 1, msg);
+            if (ex instanceof ApiException ae) throw ae;
+            throw new ApiException("Logo upload failed: " + msg, HttpStatus.BAD_GATEWAY);
         }
     }
 
@@ -83,7 +109,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             return;
         }
 
-        // Security check: restrict deletion strictly to assets within the configured folder
+        // Security: restrict deletion strictly to assets within the configured folder
         if (!publicId.startsWith(properties.getFolder() + "/")) {
             log.warn("Blocked attempt to delete foreign Cloudinary asset: {}", publicId);
             throw new ApiException("Unauthorized deletion target: asset does not belong to company logos", HttpStatus.BAD_REQUEST);
@@ -116,13 +142,12 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                 throw new ApiException("Invalid or corrupted image file", HttpStatus.BAD_REQUEST);
             }
 
-            // Verify Magic Bytes
-            boolean isPng = bytes[0] == (byte) 0x89 && bytes[1] == (byte) 0x50 && bytes[2] == (byte) 0x4E && bytes[3] == (byte) 0x47;
+            boolean isPng  = bytes[0] == (byte) 0x89 && bytes[1] == (byte) 0x50 && bytes[2] == (byte) 0x4E && bytes[3] == (byte) 0x47;
             boolean isJpeg = bytes[0] == (byte) 0xFF && bytes[1] == (byte) 0xD8 && bytes[2] == (byte) 0xFF;
             boolean isWebp = bytes.length >= 12 &&
                     bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F' &&
                     bytes[8] == 'W' && bytes[9] == 'E' && bytes[10] == 'B' && bytes[11] == 'P';
-            boolean isSvg = checkSvgContent(bytes);
+            boolean isSvg  = checkSvgContent(bytes);
 
             if (!isPng && !isJpeg && !isWebp && !isSvg) {
                 throw new ApiException("Unsupported image format. Allowed formats: PNG, JPEG, WebP, SVG.", HttpStatus.BAD_REQUEST);
@@ -139,8 +164,6 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             if (!content.contains("<svg") && !content.contains("<?xml")) {
                 return false;
             }
-
-            // XSS / Malicious script protection in SVG
             String fullContent = new String(bytes, StandardCharsets.UTF_8).toLowerCase();
             if (fullContent.contains("<script") ||
                 fullContent.contains("javascript:") ||
@@ -154,5 +177,11 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             if (ex instanceof ApiException) throw (ApiException) ex;
             return false;
         }
+    }
+
+    private String extractCloudinaryMessage(Exception ex) {
+        if (ex.getMessage() != null) return ex.getMessage();
+        Throwable cause = ex.getCause();
+        return cause != null && cause.getMessage() != null ? cause.getMessage() : ex.getClass().getSimpleName();
     }
 }
