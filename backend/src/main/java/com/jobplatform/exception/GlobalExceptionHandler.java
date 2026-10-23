@@ -79,8 +79,11 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex) {
-        log.error("Unhandled internal server exception", ex);
+        log.error("Unhandled internal server exception [{}]: {}", ex.getClass().getName(), ex.getMessage(), ex);
+        String msg = (ex.getMessage() != null && !ex.getMessage().isBlank())
+                ? "An error occurred: " + ex.getMessage()
+                : "An unexpected internal error occurred. Please contact system administrator.";
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("An unexpected internal error occurred. Please contact system administrator."));
+                .body(ApiResponse.error(msg));
     }
 }

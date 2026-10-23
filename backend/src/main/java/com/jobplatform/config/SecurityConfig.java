@@ -72,7 +72,8 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10);
+        // BCrypt strength 8 = 256 iterations — still strong, ~4x faster than 10 on free CPU
+        return new BCryptPasswordEncoder(8);
     }
 
     @Bean

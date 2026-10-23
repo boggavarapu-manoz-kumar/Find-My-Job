@@ -18,11 +18,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
@@ -88,11 +92,16 @@ public class AuthController {
                     userDTO
             );
 
+            log.info("Candidate registered successfully with username '{}'", savedUser.getUsername());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Candidate registered successfully", authResponse));
 
         } catch (DataIntegrityViolationException ex) {
+            log.warn("Registration data integrity conflict: {}", ex.getMessage());
             throw new ApiException("Username or email is already registered", HttpStatus.CONFLICT);
+        } catch (Exception ex) {
+            log.error("Registration fatal error for username '{}'", normalizedUsername, ex);
+            throw new ApiException("Registration failed: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -111,11 +120,9 @@ public class AuthController {
 
             String token = tokenProvider.generateToken(authentication);
 
-            // Fetch user entity to construct rich response
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .or(() -> userRepository.findByEmail(username))
-                    .orElse(null);
+            // Single indexed OR-query – avoids two sequential round-trips to the DB
+            String identifier = request.getUsernameOrEmail().trim();
+            User user = userRepository.findByUsernameOrEmail(identifier).orElse(null);
 
             UserResponseDTO userDTO = null;
             if (user != null) {
@@ -135,14 +142,25 @@ public class AuthController {
                     userDTO
             );
 
+            log.info("Login successful for identifier '{}'", identifier);
             return ResponseEntity.ok(ApiResponse.success("Authentication successful", authResponse));
 
         } catch (BadCredentialsException ex) {
+            log.warn("Login bad credentials for identifier '{}'", request.getUsernameOrEmail());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error("Invalid username/email or password"));
         } catch (DisabledException ex) {
+            log.warn("Login disabled account for identifier '{}'", request.getUsernameOrEmail());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error("Account is disabled. Please contact administrator."));
+        } catch (org.springframework.security.core.AuthenticationException ex) {
+            log.warn("Login authentication exception for identifier '{}': {}", request.getUsernameOrEmail(), ex.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Authentication failed: " + ex.getMessage()));
+        } catch (Exception ex) {
+            log.error("Login fatal unexpected error for identifier '{}'", request.getUsernameOrEmail(), ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Login service encountered an internal error: " + ex.getMessage()));
         }
     }
 

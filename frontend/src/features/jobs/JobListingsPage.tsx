@@ -793,13 +793,15 @@ export const JobListingsPage: React.FC = () => {
         <LoadingSkeleton count={4} />
       ) : paginatedData.content.length > 0 ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
             {paginatedData.content.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                onClick={() => navigate(`/jobs/${job.slug}`, { state: { initialJob: job } })}
-              />
+              <div key={job.id} className="flex h-full">
+                <JobCard
+                  job={job}
+                  className="w-full"
+                  onClick={() => navigate(`/jobs/${job.slug}`, { state: { initialJob: job } })}
+                />
+              </div>
             ))}
           </div>
 

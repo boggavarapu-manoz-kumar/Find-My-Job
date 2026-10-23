@@ -10,6 +10,10 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
+
+    @org.springframework.data.jpa.repository.Query("SELECT u FROM User u WHERE u.username = :identifier OR u.email = :identifier")
+    Optional<User> findByUsernameOrEmail(@org.springframework.data.repository.query.Param("identifier") String identifier);
+
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
 }

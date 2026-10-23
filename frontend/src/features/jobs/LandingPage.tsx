@@ -388,14 +388,15 @@ export const LandingPage: React.FC = () => {
               </Link>
             </div>
           ) : (
-            <motion.div
+          <motion.div
               {...staggerProps}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch"
             >
               {featuredJobs.map((job) => (
-                <motion.div key={job.id} variants={staggerItem}>
+                <motion.div key={job.id} variants={staggerItem} className="flex h-full">
                   <JobCard
                     job={job}
+                    className="w-full"
                     onClick={() => navigate(`/jobs/${job.slug}`, { state: { initialJob: job } })}
                   />
                 </motion.div>
@@ -484,11 +485,15 @@ export const LandingPage: React.FC = () => {
               </Link>
             </div>
           ) : (
-            <motion.div {...staggerProps} className="space-y-3">
+            <motion.div
+              {...staggerProps}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch"
+            >
               {latestJobs.map((job) => (
-                <motion.div key={job.id} variants={staggerItem}>
+                <motion.div key={job.id} variants={staggerItem} className="flex h-full">
                   <JobCard
                     job={job}
+                    className="w-full"
                     onClick={() => navigate(`/jobs/${job.slug}`, { state: { initialJob: job } })}
                   />
                 </motion.div>
